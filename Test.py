@@ -12,5 +12,5 @@ for i in range(5):  # Change 5 to a higher number if you want a longer loop
         sys.stdout.flush()
         time.sleep(1)  # Wait for 1 second before changing text
 
-print("\nDone Prerit!, looks better, Doing Good")  # Move to the next line after finishing
+print("\nDone Prerit!, looks better, Doing Good, not that good")  # Move to the next line after finishing
 
