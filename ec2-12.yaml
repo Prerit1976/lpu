@@ -1,0 +1,40 @@
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to launch a Free Tier Linux EC2 instance in Mumbai Region (ap-south-1)
+
+Parameters:
+  KeyPairName: testday2
+    Type: String
+    Description: Name of an existing EC2 Key Pair for SSH access
+
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-03f4878755434977f  # Amazon Linux 2 AMI (Free Tier) for ap-south-1
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: Prerit-Linux-EC2
+
+Outputs:
+  InstanceId:
+    Description: The EC2 Instance ID
+    Value: !Ref EC2Instance
+
+  PublicIP:
+    Description: The Public IP Address of the instance
+    Value: !GetAtt EC2Instance.PublicIp
