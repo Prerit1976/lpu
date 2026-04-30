@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HindiSG – Learn Hindi the Singapore Way</title>
+<style>
+  :root {
+    --saffron: #FF9933;
+    --green: #138808;
+    --navy: #000080;
+    --white: #FFFFFF;
+    --light: #FFF8F0;
+    --card: #FFFFFF;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light); color: #222; min-height: 100vh; }
+
+  /* NAV */
+  nav {
+    background: linear-gradient(135deg, var(--saffron) 0%, #e67e00 100%);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; box-shadow: 0 2px 12px rgba(255,153,51,0.4);
+  }
+  .nav-logo { font-size: 1.6rem; font-weight: 800; color: white; letter-spacing: -0.5px; }
+  .nav-logo span { color: var(--navy); }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .xp-badge { background: white; color: var(--saffron); font-weight: 700; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; }
+  .streak { color: white; font-size: 0.9rem; font-weight: 600; }
+
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* HOME */
+  .hero {
+    text-align: center; padding: 60px 24px 40px;
+    background: linear-gradient(180deg, #FFF0DC 0%, var(--light) 100%);
+  }
+  .hero-hindi { font-size: 4rem; color: var(--saffron); margin-bottom: 8px; }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; color: var(--navy); margin-bottom: 12px; }
+  .hero p { color: #555; font-size: 1.1rem; max-width: 520px; margin: 0 auto 32px; }
+  .levels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; padding: 0 24px 60px; }
+  .level-card {
+    background: var(--card); border-radius: var(--radius); padding: 28px 24px;
+    box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    border-top: 5px solid var(--saffron); text-align: left;
+  }
+  .level-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.14); }
+  .level-card.green { border-top-color: var(--green); }
+  .level-card.navy { border-top-color: var(--navy); }
+  .level-emoji { font-size: 2.4rem; margin-bottom: 12px; }
+  .level-card h3 { font-size: 1.2rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .level-card p { color: #666; font-size: 0.9rem; line-height: 1.5; }
+  .level-progress { margin-top: 14px; background: #f0f0f0; border-radius: 8px; height: 8px; overflow: hidden; }
+  .level-progress-bar { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--saffron), #e67e00); transition: width 0.6s; }
+
+  /* DASHBOARD */
+  .dash-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #0a0a6e 100%);
+    padding: 40px 24px; color: white; text-align: center;
+  }
+  .dash-header h2 { font-size: 1.8rem; margin-bottom: 8px; }
+  .dash-header p { color: rgba(255,255,255,0.75); }
+  .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .module-card {
+    background: white; border-radius: var(--radius); padding: 24px 20px;
+    box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s;
+    text-align: center;
+  }
+  .module-card:hover { transform: translateY(-3px); }
+  .module-icon { font-size: 2.8rem; margin-bottom: 12px; }
+  .module-card h4 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+  .module-card p { font-size: 0.82rem; color: #777; }
+  .module-card .mod-progress { margin-top: 12px; background: #f0f0f0; border-radius: 8px; height: 6px; overflow: hidden; }
+  .module-card .mod-bar { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--green), #0d6e0d); }
+  .back-btn { background: none; border: 2px solid var(--saffron); color: var(--saffron); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; margin: 16px 24px; font-size: 0.9rem; }
+  .back-btn:hover { background: var(--saffron); color: white; }
+
+  /* LESSON: ALPHABET */
+  .lesson-header { background: linear-gradient(135deg, var(--saffron), #e67e00); padding: 32px 24px; color: white; text-align: center; }
+  .lesson-header h2 { font-size: 1.7rem; margin-bottom: 6px; }
+  .lesson-header p { opacity: 0.85; }
+  .alphabet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; max-width: 900px; margin: 28px auto; padding: 0 24px; }
+  .alpha-card {
+    background: white; border-radius: 14px; padding: 18px 10px;
+    box-shadow: var(--shadow); text-align: center; cursor: pointer; transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+  .alpha-card:hover, .alpha-card.selected { border-color: var(--saffron); background: #FFF5E6; transform: scale(1.05); }
+  .alpha-hindi { font-size: 2.2rem; color: var(--navy); display: block; margin-bottom: 4px; }
+  .alpha-roman { font-size: 0.78rem; color: #888; font-weight: 600; letter-spacing: 0.5px; }
+  .alpha-word { font-size: 0.72rem; color: var(--saffron); font-weight: 600; margin-top: 4px; }
+
+  /* INFO BOX */
+  .info-box {
+    max-width: 700px; margin: 0 auto 32px; padding: 20px 28px;
+    background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+    display: none; border-left: 5px solid var(--saffron);
+  }
+  .info-box.show { display: block; }
+  .info-big { font-size: 3.5rem; color: var(--navy); }
+  .info-details { margin-top: 8px; color: #444; line-height: 1.6; }
+  .speak-btn {
+    background: var(--saffron); color: white; border: none; padding: 10px 22px;
+    border-radius: 8px; cursor: pointer; font-weight: 700; margin-top: 12px; font-size: 0.9rem;
+  }
+  .speak-btn:hover { background: #e67e00; }
+
+  /* VOCAB FLASHCARD */
+  .flashcard-container { max-width: 560px; margin: 40px auto; padding: 0 24px; text-align: center; }
+  .flashcard {
+    background: white; border-radius: 24px; padding: 50px 32px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12); min-height: 280px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.15s;
+    border: 3px solid transparent;
+  }
+  .flashcard:hover { transform: scale(1.02); border-color: var(--saffron); }
+  .flashcard-hindi { font-size: 4rem; color: var(--navy); margin-bottom: 12px; }
+  .flashcard-hint { font-size: 0.9rem; color: #aaa; margin-bottom: 8px; }
+  .flashcard-english { font-size: 1.5rem; color: var(--green); font-weight: 700; display: none; }
+  .flashcard-english.reveal { display: block; }
+  .flashcard-example { font-size: 0.85rem; color: #666; margin-top: 8px; display: none; }
+  .flashcard-example.reveal { display: block; }
+  .card-controls { display: flex; gap: 14px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+  .card-btn { padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.15s; }
+  .btn-reveal { background: var(--navy); color: white; }
+  .btn-reveal:hover { background: #0a0a80; }
+  .btn-next { background: var(--saffron); color: white; }
+  .btn-next:hover { background: #e67e00; }
+  .btn-prev { background: #f0f0f0; color: #444; }
+  .flashcard-counter { color: #888; font-size: 0.9rem; margin-top: 16px; }
+
+  /* QUIZ */
+  .quiz-container { max-width: 680px; margin: 36px auto; padding: 0 24px; }
+  .quiz-card { background: white; border-radius: var(--radius); padding: 36px; box-shadow: var(--shadow); }
+  .quiz-q { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .quiz-hindi { font-size: 2.8rem; color: var(--saffron); margin-bottom: 24px; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .quiz-opt {
+    padding: 16px 14px; border-radius: 12px; border: 2px solid #e0e0e0;
+    background: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;
+    transition: all 0.15s; text-align: center;
+  }
+  .quiz-opt:hover { border-color: var(--saffron); background: #FFF5E6; }
+  .quiz-opt.correct { background: #e8f8e8; border-color: var(--green); color: var(--green); }
+  .quiz-opt.wrong { background: #fce8e8; border-color: #e53935; color: #e53935; }
+  .quiz-feedback { margin-top: 20px; padding: 14px 18px; border-radius: 10px; font-weight: 600; display: none; }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: #e8f8e8; color: var(--green); }
+  .quiz-feedback.no { background: #fce8e8; color: #e53935; }
+  .quiz-next-btn { background: var(--navy); color: white; border: none; padding: 14px 32px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; font-size: 1rem; display: none; }
+  .quiz-next-btn.show { display: inline-block; }
+  .quiz-next-btn:hover { background: #0a0a80; }
+  .quiz-score { text-align: center; padding: 20px 0 8px; color: #555; font-size: 0.9rem; }
+  .score-bar { background: #f0f0f0; border-radius: 8px; height: 10px; overflow: hidden; margin-top: 8px; }
+  .score-fill { height: 100%; background: linear-gradient(90deg, var(--saffron), var(--green)); border-radius: 8px; transition: width 0.5s; }
+  .quiz-complete { text-align: center; padding: 48px 24px; }
+  .quiz-complete .big-emoji { font-size: 4rem; }
+  .quiz-complete h3 { font-size: 1.8rem; color: var(--navy); margin: 16px 0 8px; }
+  .quiz-complete p { color: #666; margin-bottom: 24px; }
+  .retry-btn { background: var(--saffron); color: white; border: none; padding: 14px 32px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1rem; }
+
+  /* PROGRESS SCREEN */
+  .progress-container { max-width: 800px; margin: 36px auto; padding: 0 24px; }
+  .progress-header { text-align: center; margin-bottom: 32px; }
+  .progress-header h2 { font-size: 1.8rem; color: var(--navy); }
+  .stats-row { display: flex; gap: 16px; justify-content: center; margin: 20px 0 32px; flex-wrap: wrap; }
+  .stat-box { background: white; border-radius: 14px; padding: 20px 28px; box-shadow: var(--shadow); text-align: center; min-width: 140px; }
+  .stat-num { font-size: 2rem; font-weight: 800; color: var(--saffron); }
+  .stat-label { color: #888; font-size: 0.85rem; margin-top: 4px; }
+  .badge-grid { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .badge { background: white; border-radius: 14px; padding: 20px; box-shadow: var(--shadow); text-align: center; width: 130px; }
+  .badge.earned { border: 2px solid var(--saffron); }
+  .badge.locked { opacity: 0.4; filter: grayscale(1); }
+  .badge-icon { font-size: 2.4rem; }
+  .badge-name { font-size: 0.78rem; color: var(--navy); font-weight: 700; margin-top: 6px; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+    display: flex; justify-content: space-around; padding: 10px 0 14px;
+    z-index: 100;
+  }
+  .nav-item { text-align: center; cursor: pointer; padding: 4px 16px; }
+  .nav-item .ni-icon { font-size: 1.6rem; display: block; }
+  .nav-item .ni-label { font-size: 0.7rem; color: #aaa; display: block; margin-top: 2px; font-weight: 600; }
+  .nav-item.active .ni-label { color: var(--saffron); }
+
+  .page-padding { padding-bottom: 80px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Hindi<span>SG</span></div>
+  <div class="nav-right">
+    <span class="streak">🔥 3 days</span>
+    <span class="xp-badge">⭐ 240 XP</span>
+  </div>
+</nav>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="showScreen('home')">
+    <span class="ni-icon">🏠</span><span class="ni-label">Home</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('dashboard')">
+    <span class="ni-icon">📚</span><span class="ni-label">Lessons</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('quiz-screen')">
+    <span class="ni-icon">🧠</span><span class="ni-label">Quiz</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('progress-screen')">
+    <span class="ni-icon">🏆</span><span class="ni-label">Progress</span>
+  </div>
+</div>
+
+<!-- ===== HOME SCREEN ===== -->
+<div id="home" class="screen active page-padding">
+  <div class="hero">
+    <div class="hero-hindi">हिंदी सीखें</div>
+    <h1>Learn Hindi the Singapore Way</h1>
+    <p>Interactive Hindi lessons aligned to Singapore's MOE curriculum — from Primary 1 to A Level.</p>
+  </div>
+  <div class="levels-grid">
+    <div class="level-card" onclick="goDash('P1-P2')">
+      <div class="level-emoji">🌱</div>
+      <h3>Primary 1 – 2</h3>
+      <p>Alphabet, numbers, colours, greetings & simple words</p>
+      <div class="level-progress"><div class="level-progress-bar" style="width:45%"></div></div>
+    </div>
+    <div class="level-card green" onclick="goDash('P3-P4')">
+      <div class="level-emoji">🌿</div>
+      <h3>Primary 3 – 4</h3>
+      <p>Simple sentences, body parts, daily routines & short stories</p>
+      <div class="level-progress"><div class="level-progress-bar" style="width:20%; background: linear-gradient(90deg,#138808,#0d6e0d)"></div></div>
+    </div>
+    <div class="level-card" onclick="goDash('P5-P6')">
+      <div class="level-emoji">🌳</div>
+      <h3>Primary 5 – 6</h3>
+      <p>Grammar foundations, conversations & PSLE preparation</p>
+      <div class="level-progress"><div class="level-progress-bar" style="width:5%"></div></div>
+    </div>
+    <div class="level-card navy" onclick="goDash('Sec1-2')">
+      <div class="level-emoji">📖</div>
+      <h3>Secondary 1 – 2</h3>
+      <p>Advanced grammar, reading comprehension & compositions</p>
+      <div class="level-progress"><div class="level-progress-bar" style="width:0%; background: linear-gradient(90deg,#000080,#0a0a80)"></div></div>
+    </div>
+    <div class="level-card navy" onclick="goDash('Sec3-4')">
+      <div class="level-emoji">🎓</div>
+      <h3>Secondary 3 – 4</h3>
+      <p>Literature, formal writing & O Level preparation</p>
+      <div class="level-progress"><div class="level-progress-bar" style="width:0%; background: linear-gradient(90deg,#000080,#0a0a80)"></div></div>
+    </div>
+    <div class="level-card" style="border-top-color:#8B0000;" onclick="goDash('ALevel')">
+      <div class="level-emoji">🏅</div>
+      <h3>A Level</h3>
+      <p>Advanced comprehension, essays & university preparation</p>
+      <div class="level-progress"><div class="level-progress-bar" style="width:0%; background: linear-gradient(90deg,#8B0000,#6b0000)"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD SCREEN ===== -->
+<div id="dashboard" class="screen page-padding">
+  <div class="dash-header">
+    <h2 id="dash-title">Primary 1 – 2</h2>
+    <p>Choose a module to start learning</p>
+  </div>
+  <button class="back-btn" onclick="showScreen('home')">← Back to Levels</button>
+  <div class="modules-grid">
+    <div class="module-card" onclick="showScreen('alphabet-screen')">
+      <div class="module-icon">🔤</div>
+      <h4>Alphabet</h4>
+      <p>Learn Devanagari script</p>
+      <div class="mod-progress"><div class="mod-bar" style="width:60%"></div></div>
+    </div>
+    <div class="module-card" onclick="showScreen('vocab-screen')">
+      <div class="module-icon">📝</div>
+      <h4>Vocabulary</h4>
+      <p>Flashcard-based word bank</p>
+      <div class="mod-progress"><div class="mod-bar" style="width:30%"></div></div>
+    </div>
+    <div class="module-card" onclick="showScreen('quiz-screen')">
+      <div class="module-icon">🧠</div>
+      <h4>Quiz</h4>
+      <p>Test your knowledge</p>
+      <div class="mod-progress"><div class="mod-bar" style="width:15%"></div></div>
+    </div>
+    <div class="module-card" style="opacity:0.5;cursor:default;">
+      <div class="module-icon">🎧</div>
+      <h4>Listening</h4>
+      <p>Coming soon</p>
+      <div class="mod-progress"><div class="mod-bar" style="width:0%"></div></div>
+    </div>
+    <div class="module-card" style="opacity:0.5;cursor:default;">
+      <div class="module-icon">✍️</div>
+      <h4>Writing</h4>
+      <p>Coming soon</p>
+      <div class="mod-progress"><div class="mod-bar" style="width:0%"></div></div>
+    </div>
+    <div class="module-card" style="opacity:0.5;cursor:default;">
+      <div class="module-icon">📖</div>
+      <h4>Stories</h4>
+      <p>Coming soon</p>
+      <div class="mod-progress"><div class="mod-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ALPHABET SCREEN ===== -->
+<div id="alphabet-screen" class="screen page-padding">
+  <div class="lesson-header">
+    <h2>Hindi Alphabet – स्वर (Vowels)</h2>
+    <p>Tap any letter to learn its sound and an example word</p>
+  </div>
+  <button class="back-btn" onclick="showScreen('dashboard')">← Back</button>
+
+  <div id="alpha-info" class="info-box" style="padding:20px 28px; margin: 0 auto 24px; max-width:700px;">
+    <span id="info-char" class="info-big"></span>
+    <div id="info-detail" class="info-details"></div>
+    <button class="speak-btn" onclick="speakHindi()">🔊 Listen</button>
+  </div>
+
+  <div class="alphabet-grid" id="alpha-grid"></div>
+
+  <div style="max-width:900px; margin: 0 auto 12px; padding: 0 24px;">
+    <h3 style="color: var(--navy); margin-bottom: 16px; font-size: 1.1rem;">व्यंजन (Consonants)</h3>
+  </div>
+  <div class="alphabet-grid" id="consonant-grid"></div>
+</div>
+
+<!-- ===== VOCAB SCREEN ===== -->
+<div id="vocab-screen" class="screen page-padding">
+  <div class="lesson-header" style="background: linear-gradient(135deg, var(--green), #0d6e0d);">
+    <h2>Vocabulary Flashcards</h2>
+    <p>Tap the card to reveal the meaning</p>
+  </div>
+  <button class="back-btn" onclick="showScreen('dashboard')">← Back</button>
+  <div class="flashcard-container">
+    <div class="flashcard" onclick="revealCard()" id="flashcard">
+      <div class="flashcard-hint">What does this mean?</div>
+      <div class="flashcard-hindi" id="fc-hindi"></div>
+      <div class="flashcard-english" id="fc-english"></div>
+      <div class="flashcard-example" id="fc-example"></div>
+    </div>
+    <div class="card-controls">
+      <button class="card-btn btn-prev" onclick="prevCard()">← Prev</button>
+      <button class="card-btn btn-reveal" onclick="revealCard()" id="reveal-btn">Reveal ✨</button>
+      <button class="card-btn btn-next" onclick="nextCard()">Next →</button>
+    </div>
+    <div class="flashcard-counter" id="fc-counter"></div>
+  </div>
+</div>
+
+<!-- ===== QUIZ SCREEN ===== -->
+<div id="quiz-screen" class="screen page-padding">
+  <div class="lesson-header" style="background: linear-gradient(135deg, var(--navy), #0a0a6e);">
+    <h2>Quick Quiz</h2>
+    <p>Select the correct answer</p>
+  </div>
+  <button class="back-btn" onclick="showScreen('dashboard')">← Back</button>
+  <div class="quiz-container">
+    <div id="quiz-body"></div>
+  </div>
+</div>
+
+<!-- ===== PROGRESS SCREEN ===== -->
+<div id="progress-screen" class="screen page-padding">
+  <div class="lesson-header" style="background: linear-gradient(135deg, #8B0000, #6b0000);">
+    <h2>🏆 My Progress</h2>
+    <p>Keep going — you're doing great!</p>
+  </div>
+  <div class="progress-container">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num">240</div><div class="stat-label">Total XP</div></div>
+      <div class="stat-box"><div class="stat-num">3</div><div class="stat-label">Day Streak 🔥</div></div>
+      <div class="stat-box"><div class="stat-num">18</div><div class="stat-label">Words Learned</div></div>
+      <div class="stat-box"><div class="stat-num">7</div><div class="stat-label">Quizzes Done</div></div>
+    </div>
+    <h3 style="color:var(--navy); margin-bottom:18px; text-align:center;">Badges</h3>
+    <div class="badge-grid">
+      <div class="badge earned"><div class="badge-icon">🌟</div><div class="badge-name">First Lesson</div></div>
+      <div class="badge earned"><div class="badge-icon">🔤</div><div class="badge-name">Alphabet Pro</div></div>
+      <div class="badge earned"><div class="badge-icon">🔥</div><div class="badge-name">3-Day Streak</div></div>
+      <div class="badge locked"><div class="badge-icon">📖</div><div class="badge-name">Story Reader</div></div>
+      <div class="badge locked"><div class="badge-icon">🧠</div><div class="badge-name">Quiz Master</div></div>
+      <div class="badge locked"><div class="badge-icon">🎓</div><div class="badge-name">A Level Ready</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────
+const vowels = [
+  { h:'अ', r:'a', w:'अनार (Pomegranate)', ex:'अ से अनार' },
+  { h:'आ', r:'aa', w:'आम (Mango)', ex:'आ से आम' },
+  { h:'इ', r:'i', w:'इमली (Tamarind)', ex:'इ से इमली' },
+  { h:'ई', r:'ee', w:'ईख (Sugarcane)', ex:'ई से ईख' },
+  { h:'उ', r:'u', w:'उल्लू (Owl)', ex:'उ से उल्लू' },
+  { h:'ऊ', r:'oo', w:'ऊन (Wool)', ex:'ऊ से ऊन' },
+  { h:'ए', r:'e', w:'एड़ी (Heel)', ex:'ए से एड़ी' },
+  { h:'ऐ', r:'ai', w:'ऐनक (Glasses)', ex:'ऐ से ऐनक' },
+  { h:'ओ', r:'o', w:'ओखली (Mortar)', ex:'ओ से ओखली' },
+  { h:'औ', r:'au', w:'औरत (Woman)', ex:'औ से औरत' },
+  { h:'अं', r:'an', w:'अंगूर (Grapes)', ex:'अं से अंगूर' },
+  { h:'अः', r:'ah', w:'(Visarga)', ex:'Breath sound' },
+];
+
+const consonants = [
+  { h:'क', r:'ka', w:'कमल (Lotus)', ex:'क से कमल' },
+  { h:'ख', r:'kha', w:'खरगोश (Rabbit)', ex:'ख से खरगोश' },
+  { h:'ग', r:'ga', w:'गाय (Cow)', ex:'ग से गाय' },
+  { h:'घ', r:'gha', w:'घर (House)', ex:'घ से घर' },
+  { h:'च', r:'cha', w:'चाँद (Moon)', ex:'च से चाँद' },
+  { h:'छ', r:'chha', w:'छाता (Umbrella)', ex:'छ से छाता' },
+  { h:'ज', r:'ja', w:'जहाज़ (Ship)', ex:'ज से जहाज़' },
+  { h:'झ', r:'jha', w:'झरना (Waterfall)', ex:'झ से झरना' },
+  { h:'ट', r:'ta', w:'टमाटर (Tomato)', ex:'ट से टमाटर' },
+  { h:'ड', r:'da', w:'डमरू (Drum)', ex:'ड से डमरू' },
+  { h:'त', r:'ta', w:'तरबूज़ (Watermelon)', ex:'त से तरबूज़' },
+  { h:'थ', r:'tha', w:'थाली (Plate)', ex:'थ से थाली' },
+  { h:'द', r:'da', w:'दरवाज़ा (Door)', ex:'द से दरवाज़ा' },
+  { h:'न', r:'na', w:'नाक (Nose)', ex:'न से नाक' },
+  { h:'प', r:'pa', w:'पतंग (Kite)', ex:'प से पतंग' },
+  { h:'फ', r:'fa', w:'फल (Fruit)', ex:'फ से फल' },
+  { h:'ब', r:'ba', w:'बकरी (Goat)', ex:'ब से बकरी' },
+  { h:'भ', r:'bha', w:'भालू (Bear)', ex:'भ से भालू' },
+  { h:'म', r:'ma', w:'मछली (Fish)', ex:'म से मछली' },
+  { h:'य', r:'ya', w:'यात्रा (Journey)', ex:'य से यात्रा' },
+  { h:'र', r:'ra', w:'रोटी (Bread)', ex:'र से रोटी' },
+  { h:'ल', r:'la', w:'लड्डू (Sweet)', ex:'ल से लड्डू' },
+  { h:'व', r:'va', w:'वर्षा (Rain)', ex:'व से वर्षा' },
+  { h:'स', r:'sa', w:'सेब (Apple)', ex:'स से सेब' },
+  { h:'ह', r:'ha', w:'हाथी (Elephant)', ex:'ह से हाथी' },
+];
+
+const vocab = [
+  { h:'नमस्ते', e:'Hello / Namaste', ex:'नमस्ते! कैसे हो? (Hello! How are you?)' },
+  { h:'धन्यवाद', e:'Thank you', ex:'आपका धन्यवाद! (Thank you!)' },
+  { h:'माँ', e:'Mother', ex:'मेरी माँ बहुत अच्छी हैं। (My mother is very good.)' },
+  { h:'पिता', e:'Father', ex:'मेरे पिता डॉक्टर हैं। (My father is a doctor.)' },
+  { h:'घर', e:'House / Home', ex:'मेरा घर बड़ा है। (My house is big.)' },
+  { h:'पानी', e:'Water', ex:'मुझे पानी चाहिए। (I want water.)' },
+  { h:'खाना', e:'Food', ex:'खाना बहुत स्वादिष्ट है। (The food is very tasty.)' },
+  { h:'दोस्त', e:'Friend', ex:'राम मेरा दोस्त है। (Ram is my friend.)' },
+  { h:'किताब', e:'Book', ex:'यह मेरी किताब है। (This is my book.)' },
+  { h:'स्कूल', e:'School', ex:'मैं स्कूल जाता हूँ। (I go to school.)' },
+];
+
+const quizData = [
+  { q:'What does this word mean?', h:'माँ', opts:['Father','Mother','Sister','Brother'], ans:1 },
+  { q:'What does this word mean?', h:'पानी', opts:['Food','Fire','Water','Air'], ans:2 },
+  { q:'What does this word mean?', h:'घर', opts:['School','Market','Temple','House'], ans:3 },
+  { q:'Which letter makes the "ka" sound?', h:'क', opts:['ग','ख','क','घ'], ans:2 },
+  { q:'What does "नमस्ते" mean?', h:'नमस्ते', opts:['Goodbye','Thank you','Hello','Sorry'], ans:2 },
+  { q:'What does this word mean?', h:'दोस्त', opts:['Enemy','Teacher','Friend','King'], ans:2 },
+  { q:'What does "किताब" mean?', h:'किताब', opts:['Pen','Paper','Bag','Book'], ans:3 },
+];
+
+// ─── STATE ─────────────────────────────────────────────────
+let currentCard = 0;
+let cardRevealed = false;
+let quizIndex = 0;
+let quizScore = 0;
+let quizAnswered = false;
+let currentInfoChar = '';
+
+// ─── NAVIGATION ────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const map = { home:0, dashboard:1, 'quiz-screen':2, 'progress-screen':3 };
+  if (map[id] !== undefined) document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
+  if (id === 'vocab-screen') renderCard();
+  if (id === 'quiz-screen') renderQuiz();
+  if (id === 'alphabet-screen') renderAlphabet();
+}
+
+function goDash(level) {
+  document.getElementById('dash-title').textContent = level.replace('-',' – ').replace('Sec','Secondary ').replace('ALevel','A Level');
+  showScreen('dashboard');
+}
+
+// ─── ALPHABET ──────────────────────────────────────────────
+function renderAlphabet() {
+  const vGrid = document.getElementById('alpha-grid');
+  const cGrid = document.getElementById('consonant-grid');
+  vGrid.innerHTML = vowels.map((l,i) => `
+    <div class="alpha-card" onclick="showAlphaInfo(${i},'v')">
+      <span class="alpha-hindi">${l.h}</span>
+      <span class="alpha-roman">${l.r}</span>
+      <span class="alpha-word">${l.w.split('(')[0].trim()}</span>
+    </div>`).join('');
+  cGrid.innerHTML = consonants.map((l,i) => `
+    <div class="alpha-card" onclick="showAlphaInfo(${i},'c')">
+      <span class="alpha-hindi">${l.h}</span>
+      <span class="alpha-roman">${l.r}</span>
+      <span class="alpha-word">${l.w.split('(')[0].trim()}</span>
+    </div>`).join('');
+}
+
+function showAlphaInfo(i, type) {
+  const l = type === 'v' ? vowels[i] : consonants[i];
+  currentInfoChar = l.h;
+  document.getElementById('info-char').textContent = l.h;
+  document.getElementById('info-detail').innerHTML = `
+    <strong>Pronunciation:</strong> "${l.r}"<br/>
+    <strong>Example word:</strong> ${l.w}<br/>
+    <strong>Mnemonic:</strong> <em>${l.ex}</em>
+  `;
+  document.getElementById('alpha-info').classList.add('show');
+  document.querySelectorAll('.alpha-card').forEach(c => c.classList.remove('selected'));
+  const grid = type === 'v' ? document.getElementById('alpha-grid') : document.getElementById('consonant-grid');
+  grid.children[i].classList.add('selected');
+}
+
+function speakHindi() {
+  if ('speechSynthesis' in window && currentInfoChar) {
+    const u = new SpeechSynthesisUtterance(currentInfoChar);
+    u.lang = 'hi-IN'; u.rate = 0.8;
+    speechSynthesis.speak(u);
+  }
+}
+
+// ─── VOCAB ──────────────────────────────────────────────────
+function renderCard() {
+  const c = vocab[currentCard];
+  document.getElementById('fc-hindi').textContent = c.h;
+  const en = document.getElementById('fc-english');
+  const ex = document.getElementById('fc-example');
+  en.textContent = c.e; en.classList.remove('reveal');
+  ex.textContent = c.ex; ex.classList.remove('reveal');
+  document.getElementById('reveal-btn').textContent = 'Reveal ✨';
+  cardRevealed = false;
+  document.getElementById('fc-counter').textContent = `${currentCard + 1} / ${vocab.length}`;
+}
+
+function revealCard() {
+  if (cardRevealed) return;
+  document.getElementById('fc-english').classList.add('reveal');
+  document.getElementById('fc-example').classList.add('reveal');
+  document.getElementById('reveal-btn').textContent = '✅ Revealed';
+  cardRevealed = true;
+  if ('speechSynthesis' in window) {
+    const u = new SpeechSynthesisUtterance(vocab[currentCard].h);
+    u.lang = 'hi-IN'; u.rate = 0.8; speechSynthesis.speak(u);
+  }
+}
+
+function nextCard() {
+  currentCard = (currentCard + 1) % vocab.length;
+  renderCard();
+}
+
+function prevCard() {
+  currentCard = (currentCard - 1 + vocab.length) % vocab.length;
+  renderCard();
+}
+
+// ─── QUIZ ───────────────────────────────────────────────────
+function renderQuiz() {
+  if (quizIndex >= quizData.length) {
+    const pct = Math.round((quizScore / quizData.length) * 100);
+    document.getElementById('quiz-body').innerHTML = `
+      <div class="quiz-complete">
+        <div class="big-emoji">${pct >= 70 ? '🎉' : '📚'}</div>
+        <h3>${pct >= 70 ? 'Excellent Work!' : 'Keep Practising!'}</h3>
+        <p>You scored <strong>${quizScore} / ${quizData.length}</strong> (${pct}%)</p>
+        <button class="retry-btn" onclick="resetQuiz()">Try Again 🔄</button>
+      </div>`;
+    return;
+  }
+  const q = quizData[quizIndex];
+  const pct = Math.round((quizScore / quizData.length) * 100);
+  document.getElementById('quiz-body').innerHTML = `
+    <div class="quiz-score">Question ${quizIndex + 1} of ${quizData.length} &nbsp;|&nbsp; Score: ${quizScore}
+      <div class="score-bar"><div class="score-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="quiz-card">
+      <div class="quiz-q">${q.q}</div>
+      <div class="quiz-hindi">${q.h}</div>
+      <div class="quiz-options">
+        ${q.opts.map((o,i) => `<button class="quiz-opt" onclick="answerQuiz(${i})">${o}</button>`).join('')}
+      </div>
+      <div class="quiz-feedback" id="qfeed"></div>
+      <button class="quiz-next-btn" id="qnext" onclick="nextQuestion()">Next Question →</button>
+    </div>`;
+  quizAnswered = false;
+}
+
+function answerQuiz(i) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const q = quizData[quizIndex];
+  const opts = document.querySelectorAll('.quiz-opt');
+  const feed = document.getElementById('qfeed');
+  const nxt = document.getElementById('qnext');
+  opts.forEach((o, idx) => {
+    if (idx === q.ans) o.classList.add('correct');
+    else if (idx === i) o.classList.add('wrong');
+    o.style.pointerEvents = 'none';
+  });
+  if (i === q.ans) {
+    quizScore++;
+    feed.textContent = '✅ Correct! शाबाश! (Well done!)';
+    feed.className = 'quiz-feedback show ok';
+  } else {
+    feed.textContent = `❌ Not quite. The answer is "${q.opts[q.ans]}"`;
+    feed.className = 'quiz-feedback show no';
+  }
+  nxt.className = 'quiz-next-btn show';
+}
+
+function nextQuestion() {
+  quizIndex++;
+  renderQuiz();
+}
+
+function resetQuiz() {
+  quizIndex = 0; quizScore = 0; quizAnswered = false;
+  renderQuiz();
+}
+
+// ─── INIT ──────────────────────────────────────────────────
+renderAlphabet();
+renderCard();
+renderQuiz();
+</script>
+</body>
+</html>
