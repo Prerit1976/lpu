@@ -15,16 +15,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build-deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: hindi-app
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: hindi-app/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Add 404.html for SPA routing on GitHub Pages
+        run: cp dist/index.html dist/404.html
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: hindi-app
+          path: hindi-app/dist
       - uses: actions/deploy-pages@v4
         id: deployment
