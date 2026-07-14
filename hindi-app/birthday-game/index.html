@@ -48,6 +48,7 @@
   label.fld{display:block;text-align:left;font-size:13px;font-weight:700;color:var(--muted);margin:12px 0 4px}
 
   .banner{background:#fff4e0;border:1px solid #ffd88a;color:#8a5a00;border-radius:14px;padding:10px 12px;font-size:12.5px;margin:0 0 14px;text-align:left}
+  .banner.ok{background:#eafaf1;border-color:#bfe9d2;color:#0f7a4a}
   details{background:#f6f3ff;border-radius:12px;padding:10px 12px;text-align:left;font-size:13px;margin-top:12px}
   details summary{cursor:pointer;font-weight:700;color:var(--purple)}
   details ol{margin:8px 0 0;padding-left:20px;line-height:1.6}
@@ -64,6 +65,7 @@
   .qr{background:#fff;padding:12px;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.14);min-width:120px;min-height:120px;display:flex;align-items:center;justify-content:center}
   .qr img,.qr canvas{display:block;width:190px;height:190px}
   .linkbox{background:#f6f3ff;border-radius:10px;padding:9px 11px;font-size:12px;color:var(--purple);word-break:break-all;text-align:center;margin:6px 0}
+  .lbl{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin:12px 0 2px;text-align:center}
   .divider{border:none;border-top:1px solid #eee;margin:18px 0}
 
   .meta{display:flex;justify-content:space-between;color:#fff;font-size:13px;opacity:.92;margin-bottom:4px}
@@ -129,31 +131,24 @@
 
 <script>
 /* ============================================================
-   1) EDIT THE STAR'S NAME
+   1) STAR NAME + ROOM
    ============================================================ */
 const STAR = "Prerit";
+const ROOM = "PRERIT";   // fixed room -> the two links below are always stable
 
 /* ============================================================
-   2) FIREBASE (needed for real phones). Leave as-is to test on
-      ONE device (syncs across tabs). To let family join on their
-      OWN phones:
-        a) console.firebase.google.com -> Add project (free)
-        b) Build -> Realtime Database -> Create (start in TEST mode)
-        c) Project settings -> Your apps -> Web -> copy config
-        d) Paste below (especially databaseURL), then host the file.
+   2) ONE-LINE SETUP so family can play on their OWN phones:
+      Create a free Firebase Realtime Database (Test mode) and paste
+      ONLY its URL here (looks like the example).  That's it.
+        console.firebase.google.com -> Add project ->
+        Build -> Realtime Database -> Create -> Test mode ->
+        copy the URL shown at the top of the database.
    ============================================================ */
-const FB = {
-  apiKey:      "PASTE_apiKey",
-  authDomain:  "PASTE.firebaseapp.com",
-  databaseURL: "https://PASTE-default-rtdb.firebaseio.com",
-  projectId:   "PASTE",
-  appId:       "PASTE"
-};
-const USE_FIREBASE = FB.databaseURL.indexOf("PASTE") === -1;
+const DB_URL = "PASTE_DATABASE_URL";   // e.g. https://prerit-bday-default-rtdb.firebaseio.com
+const USE_CLOUD = /^https:\/\/.+/.test(DB_URL) && DB_URL.indexOf("PASTE")===-1;
 
 /* ============================================================
-   3) 15 QUESTIONS — funny options. `real` = index of the answer
-      pre-marked correct (the host can change any in Master Control).
+   3) QUESTIONS (situational + funny, with reactions on reveal)
    ============================================================ */
 const QUESTIONS = [
   {e:"🍜", q:"What's his ultimate comfort food?", o:["A mountain of cheese 🧀","Chinese — noodles for the soul 🍜","Whatever's in the fridge 🧊","He forgets to eat, honestly 😅"], real:1, react:"Noodle royalty confirmed 🍜👑"},
@@ -174,53 +169,47 @@ const QUESTIONS = [
 ];
 
 /* ============================================================
-   APP
+   APP STATE
    ============================================================ */
-const app = document.getElementById('app');
+const app=document.getElementById('app');
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-
-let role=null;            // 'host' | 'player'
-let code=null;            // room code
-let room={};              // {phase, current, answers{}, players{id:{name,answers}}}
-let hostView='lobby';     // host sub-view when in lobby: 'lobby' | 'setans'
-let myId=null, myName=''; // player identity
-let confettiShown=false;
-
-/* ---------- Backend (Firebase OR local demo) ---------- */
-function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
-let db=null;
-async function ensureBackend(){
-  if(!USE_FIREBASE||db) return;
-  await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
-  await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js");
-  firebase.initializeApp(FB); db=firebase.database();
-}
 function genId(){return 'p_'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
-function genCode(){const a='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c;}
+
+let role=null, code=ROOM, room={}, hostView='lobby', myId=null, myName='', confettiShown=false;
+let lastSnap=null, poller=null;
+
+/* ---------- persistence so a refresh does NOT reset anything ---------- */
+function saveMe(){ try{localStorage.setItem('bstar_me',JSON.stringify({code:code,id:myId,name:myName}));}catch(e){} }
+function loadMe(){ try{return JSON.parse(localStorage.getItem('bstar_me')||'null');}catch(e){return null;} }
+function clearMe(){ try{localStorage.removeItem('bstar_me');}catch(e){} }
+
+/* ============================================================
+   BACKEND — cloud (Firebase REST, URL only) OR local demo
+   ============================================================ */
+function base(path){ return DB_URL+'/rooms/'+code+(path?('/'+path):'')+'.json'; }
+async function cGet(){ const r=await fetch(base(''),{cache:'no-store'}); return await r.json(); }
+function cPut(path,val){ return fetch(base(path),{method:'PUT',body:JSON.stringify(val)}); }
+function cPatch(obj){ return fetch(base(''),{method:'PATCH',body:JSON.stringify(obj)}); }
+
+function emit(json){ const s=JSON.stringify(json||{}); if(s!==lastSnap){ lastSnap=s; onRoom(json||{}); } }
+function refresh(){ if(USE_CLOUD) cGet().then(emit).catch(()=>{}); }
 
 const Net = {
-  listen(c,cb){
-    if(USE_FIREBASE){ db.ref('rooms/'+c).on('value',s=>cb(s.val()||{})); }
-    else { L._c=c; L._cb=cb; L._ch=new BroadcastChannel('bstar:'+c);
-      L._ch.onmessage=()=>cb(L._read()); window.addEventListener('storage',e=>{if(e.key===L._key())cb(L._read());}); cb(L._read()); }
+  start(){
+    if(USE_CLOUD){ if(poller)clearInterval(poller); refresh(); poller=setInterval(refresh,1200); }
+    else { L._c=code; L._cb=emit; L._ch=new BroadcastChannel('bstar:'+code);
+      L._ch.onmessage=()=>emit(L._read()); window.addEventListener('storage',e=>{if(e.key===L._key())emit(L._read());}); emit(L._read()); }
   },
-  async ensureRoom(c){
+  async ensureRoom(){
     const defA={};QUESTIONS.forEach((q,i)=>defA[i]=q.real);
-    if(USE_FIREBASE){ const s=await db.ref('rooms/'+c).once('value');
-      if(!s.exists()||!s.val().answers) await db.ref('rooms/'+c).update({answers:defA,phase:'lobby',current:-1}); }
+    if(USE_CLOUD){ const j=await cGet(); if(!j||!j.answers) await cPatch({answers:defA,phase:'lobby',current:-1}); refresh(); }
     else { const r=L._read(); if(!r.answers){r.answers=defA;r.players={};r.phase='lobby';r.current=-1;L._write(r);} }
   },
-  update(c,obj){ if(USE_FIREBASE) db.ref('rooms/'+c).update(obj); else {const r=L._read();Object.assign(r,obj);L._write(r);} },
-  setAnswer(c,q,idx){ if(USE_FIREBASE) db.ref('rooms/'+c+'/answers/'+q).set(idx); else {const r=L._read();r.answers=r.answers||{};r.answers[q]=idx;L._write(r);} },
-  join(c,name){ const id=genId();
-    if(USE_FIREBASE) db.ref('rooms/'+c+'/players/'+id).set({name:name,answers:{}});
-    else {const r=L._read();r.players=r.players||{};r.players[id]={name:name,answers:{}};L._write(r);} return id; },
-  answer(c,id,q,idx){ if(USE_FIREBASE) db.ref('rooms/'+c+'/players/'+id+'/answers/'+q).set(idx);
-    else {const r=L._read();if(r.players&&r.players[id]){r.players[id].answers=r.players[id].answers||{};r.players[id].answers[q]=idx;L._write(r);}} },
-  async clearAnswers(c){
-    if(USE_FIREBASE){ const s=await db.ref('rooms/'+c+'/players').once('value'); const v=s.val()||{}; const u={}; Object.keys(v).forEach(id=>u[id+'/answers']=null); if(Object.keys(u).length) await db.ref('rooms/'+c+'/players').update(u); }
-    else { const r=L._read(); Object.keys(r.players||{}).forEach(id=>r.players[id].answers={}); L._write(r); }
-  }
+  update(obj){ if(USE_CLOUD){cPatch(obj).then(refresh);} else {const r=L._read();Object.assign(r,obj);L._write(r);} },
+  setAnswer(q,idx){ if(USE_CLOUD){cPut('answers/'+q,idx).then(refresh);} else {const r=L._read();r.answers=r.answers||{};r.answers[q]=idx;L._write(r);} },
+  join(name){ const id=genId(); if(USE_CLOUD){cPut('players/'+id,{name:name,answers:{}}).then(refresh);} else {const r=L._read();r.players=r.players||{};r.players[id]={name:name,answers:{}};L._write(r);} return id; },
+  answer(id,q,idx){ if(USE_CLOUD){cPut('players/'+id+'/answers/'+q,idx).then(refresh);} else {const r=L._read();if(r.players&&r.players[id]){r.players[id].answers=r.players[id].answers||{};r.players[id].answers[q]=idx;L._write(r);}} },
+  async clearAnswers(){ if(USE_CLOUD){const j=await cGet();const u={};Object.keys((j&&j.players)||{}).forEach(id=>u['players/'+id+'/answers']=null); if(Object.keys(u).length) await cPatch(u); refresh();} else {const r=L._read();Object.keys(r.players||{}).forEach(id=>r.players[id].answers={});L._write(r);} }
 };
 const L={ _c:null,_cb:null,_ch:null,
   _key(){return 'bstar:'+this._c;},
@@ -229,13 +218,21 @@ const L={ _c:null,_cb:null,_ch:null,
 };
 
 function onRoom(snap){ room=snap||{}; render(); }
-function render(){ if(role==='host') renderHost(); else if(role==='player') renderPlayer(); else renderLanding(); }
+function render(){ role==='host'?renderHost():role==='player'?renderPlayer():renderLanding(); }
 
-/* ---------- shared scoring / html ---------- */
+/* ============================================================
+   LINKS
+   ============================================================ */
+function baseUrl(){ return location.origin+location.pathname; }
+function hostLink(){ return baseUrl()+'#host'; }
+function joinLink(){ return baseUrl()+'#join='+ROOM; }
+
+/* ============================================================
+   scoring / shared HTML
+   ============================================================ */
 function correctIdx(qi){ return (room.answers&&room.answers[qi]!=null)?room.answers[qi]:QUESTIONS[qi].real; }
 function scoreOf(p){ let s=0; QUESTIONS.forEach((Q,i)=>{ if((p.answers||{})[i]===correctIdx(i))s++; }); return s; }
-
-const REACTS=["Locked in! 🔒","Bold choice! 😏","Ooh, confident! 💪","Interesting… 🤔","Nice one! ✨","Gut call! 🎯","Feeling lucky? 🍀","That's your final answer? 👀"];
+const REACTS=["Locked in! 🔒","Bold choice! 😏","Ooh, confident! 💪","Interesting… 🤔","Nice one! ✨","Gut call! 🎯","Feeling lucky? 🍀","Final answer? 👀"];
 function winnerLine(){
   const players=room.players?Object.entries(room.players):[];
   if(!players.length) return '';
@@ -245,9 +242,8 @@ function winnerLine(){
   const winners=ranked.filter(r=>r.score===top).map(w=>w.name);
   const pct=Math.round(top/QUESTIONS.length*100);
   const tag=pct>=80?'knows him inside out! 🧠🏆':pct>=50?'knows him pretty well! 🎉':'gave it a solid shot! 😄';
-  return winners.length>1 ? `${winners.join(' & ')} tie — both ${tag}` : `👑 ${winners[0]} ${tag}`;
+  return winners.length>1 ? winners.join(' & ')+' tie — both '+tag : '👑 '+winners[0]+' '+tag;
 }
-
 function breakdownHTML(qi){
   const Q=QUESTIONS[qi], correct=correctIdx(qi);
   const players=room.players?Object.values(room.players):[];
@@ -265,7 +261,6 @@ function breakdownHTML(qi){
     <p class="sub" style="text-align:left;margin:14px 0 4px"><b>What everyone said:</b></p>
     <ul class="blist">${rows||'<li class="empty">No players</li>'}</ul></div>`;
 }
-
 function leaderboardHTML(highlightId){
   const players=room.players?Object.entries(room.players):[];
   const ranked=players.map(([id,p])=>({id,name:p.name,score:scoreOf(p)})).sort((a,b)=>b.score-a.score);
@@ -281,32 +276,31 @@ function leaderboardHTML(highlightId){
    LANDING
    ============================================================ */
 function renderLanding(){
-  const m=(location.hash||'').match(/join=?([A-Za-z0-9]{4})/);
-  if(m){ role='player'; return renderJoin(m[1].toUpperCase()); }
   app.innerHTML=`
     <div class="screen">
       <div class="big">🎂</div>
       <h2>Let's Play Live!</h2>
       <p class="sub">One host runs the game. Everyone joins on their own phone, answers each question together, then we reveal who really knows ${esc(STAR)}.</p>
-      ${USE_FIREBASE?'':'<div class="banner">🧪 <b>Demo mode.</b> Right now it syncs only between tabs on <b>this</b> device. Add a Firebase config (see the note in Master Control) + host the file to let family use their own phones.</div>'}
-      <button class="btn btn-xl btn-host" onclick="goHost()">🎛️ Master Control (Host)</button>
+      ${USE_CLOUD
+        ? '<div class="banner ok">✅ <b>Connected.</b> Family can join on their own phones.</div>'
+        : '<div class="banner">🧪 <b>Demo mode.</b> This only syncs between tabs on <b>this</b> device. To play across phones, add your Firebase Database URL (one line near the top of the file) and re-host.</div>'}
+      <button class="btn btn-xl btn-host" onclick="enterHost()">🎛️ Master Control (Host)</button>
       <div style="height:10px"></div>
-      <button class="btn btn-xl" onclick="role='player';renderJoin('')">🙋 Join &amp; Play</button>
+      <button class="btn btn-xl" onclick="enterJoin('')">🙋 Join &amp; Play</button>
     </div>`;
 }
 
 /* ============================================================
    HOST — Master Control
    ============================================================ */
-async function goHost(){
-  role='host'; hostView='lobby'; confettiShown=false;
-  try{ await ensureBackend(); }catch(e){ return err('Could not reach Firebase. Check config / internet.'); }
-  code=code||genCode();
-  await Net.ensureRoom(code);
-  Net.listen(code,onRoom);
+async function enterHost(){
+  role='host'; code=ROOM; hostView='lobby'; confettiShown=false;
+  if(location.hash!=='#host') location.hash='#host';
+  await Net.ensureRoom();
+  Net.start();
+  renderHost();
 }
-window.goHost=goHost;
-function joinLink(){ return location.origin+location.pathname+'#join='+code; }
+window.enterHost=enterHost;
 
 function renderHost(){
   const phase=room.phase||'lobby';
@@ -318,28 +312,30 @@ function renderHost(){
 
 function hostLobby(){
   const players=room.players?Object.values(room.players):[];
-  const link=joinLink();
   app.innerHTML=`<div class="card">
     <h2 style="text-align:center;margin-top:2px">📲 Invite everyone</h2>
-    <p class="sub" style="text-align:center">Point a phone camera at the code — or tap Share. People just enter their name to log in.</p>
+    <p class="sub" style="text-align:center">Point a phone camera at the code, or tap Share. People just enter their name.</p>
     <div class="qrwrap"><div id="qrbox" class="qr"></div></div>
     <div class="row" style="margin-top:0">
-      <button class="btn btn-sm" onclick="shareLink()">📤 Share link</button>
-      <button class="btn btn-ghost" onclick="copyLink()">🔗 Copy</button>
+      <button class="btn btn-sm" onclick="shareLink()">📤 Share join link</button>
+      <button class="btn btn-ghost" onclick="copyText(joinLink())">🔗 Copy</button>
     </div>
-    <div class="linkbox">${esc(link)}</div>
-    <div class="codebox"><div class="k">ALREADY ON THIS PAGE? TAP “JOIN &amp; PLAY” AND ENTER CODE</div><div class="v">${code}</div></div>
+    <div class="lbl">JOIN LINK (send to family)</div>
+    <div class="linkbox">${esc(joinLink())}</div>
+    <div class="lbl">🎛️ MASTER CONTROL LINK (only you — bookmark it)</div>
+    <div class="linkbox">${esc(hostLink())}</div>
+    <div class="row" style="margin-top:6px"><button class="btn btn-ghost" onclick="copyText(hostLink())">🔗 Copy master link</button></div>
     <hr class="divider">
     <h2 style="text-align:center">👥 Joined (${players.length})</h2>
-    ${players.length?`<ul class="plist">${players.map(p=>`<li>${esc(p.name)}</li>`).join('')}</ul>`:'<p class="empty">Waiting for people to log in…</p>'}
+    ${players.length?`<ul class="plist">${players.map(p=>`<li>${esc(p.name)}</li>`).join('')}</ul>`:'<p class="empty">Waiting for people to join…</p>'}
     <button class="btn btn-xl" ${players.length?'':'disabled'} onclick="hostStart()">▶ START GAME</button>
     <div class="row">
       <button class="btn btn-ghost" onclick="hostView='setans';renderHost()">⚙️ Set correct answers</button>
-      <button class="btn btn-ghost" onclick="leave()">⬅ Back</button>
+      <button class="btn btn-ghost" onclick="leave()">⬅ Exit</button>
     </div>
-    ${firebaseHelp()}
+    ${USE_CLOUD?'':firebaseHelp()}
   </div>`;
-  paintQR('qrbox',link);
+  paintQR('qrbox',joinLink());
 }
 
 function hostSetAnswers(){
@@ -350,7 +346,7 @@ function hostSetAnswers(){
   }).join('');
   app.innerHTML=`<div class="card">
     <h2 style="text-align:center">⚙️ Correct Answers</h2>
-    <p class="sub">Defaults are pre-filled from your list. Tap to change any — these decide the scores. Players never see this.</p>
+    <p class="sub">Defaults are pre-filled. Tap to change any — these decide the scores. Players never see this.</p>
     ${body}
     <div class="row"><button class="btn btn-go" onclick="hostView='lobby';renderHost()">✓ Done</button></div>
   </div>`;
@@ -391,26 +387,33 @@ function hostResults(){
   if(!confettiShown){confettiShown=true;burstConfetti(true);}
 }
 
-window.hostStart=function(){ Net.update(code,{phase:'playing',current:0}); };
+window.hostStart=function(){ Net.update({phase:'playing',current:0}); };
 window.hostNext=function(){
   const cur=room.current||0;
-  if(room.phase==='playing'){ cur<QUESTIONS.length-1?Net.update(code,{current:cur+1}):Net.update(code,{phase:'review',current:0}); }
-  else if(room.phase==='review'){ cur<QUESTIONS.length-1?Net.update(code,{current:cur+1}):Net.update(code,{phase:'results'}); }
+  if(room.phase==='playing'){ cur<QUESTIONS.length-1?Net.update({current:cur+1}):Net.update({phase:'review',current:0}); }
+  else if(room.phase==='review'){ cur<QUESTIONS.length-1?Net.update({current:cur+1}):Net.update({phase:'results'}); }
 };
-window.hostPrev=function(){ const cur=room.current||0; if(cur>0)Net.update(code,{current:cur-1}); };
-window.hostNewGame=async function(){ confettiShown=false; await Net.clearAnswers(code); Net.update(code,{phase:'lobby',current:-1}); };
-window.setAns=function(q,i){ Net.setAnswer(code,q,i); };
-window.copyLink=function(){ const l=joinLink(); if(navigator.clipboard) navigator.clipboard.writeText(l).then(()=>toast('Link copied!'),()=>prompt('Copy:',l)); else prompt('Copy:',l); };
+window.hostPrev=function(){ const cur=room.current||0; if(cur>0)Net.update({current:cur-1}); };
+window.hostNewGame=async function(){ confettiShown=false; await Net.clearAnswers(); Net.update({phase:'lobby',current:-1}); };
+window.setAns=function(q,i){ Net.setAnswer(q,i); };
+window.copyText=function(t){ if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>toast('Copied!'),()=>prompt('Copy:',t)); else prompt('Copy:',t); };
 window.shareLink=async function(){
   const url=joinLink();
-  const msg=`🎉 Join our Birthday guessing game! Open this and enter your name:\n${url}\n(Room code: ${code})`;
-  if(navigator.share){ try{ await navigator.share({title:'Birthday Game 🎂',text:'Join our Birthday guessing game!',url:url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
-  if(navigator.clipboard){ navigator.clipboard.writeText(msg).then(()=>toast('Invite copied — paste it anywhere!'),()=>prompt('Copy this invite:',msg)); }
-  else prompt('Copy this invite:',msg);
+  if(navigator.share){ try{ await navigator.share({title:'Who Knows Prerit Best? 🎂',text:'Join the birthday game — just enter your name!',url:url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  copyText(url+'\n(Just open it and enter your name)');
 };
 
-/* QR code (loads a tiny lib once; falls back to link if offline) */
+function firebaseHelp(){
+  return `<details><summary>📱 Make it work on everyone's phones (1 line)</summary>
+    <ol><li><code>console.firebase.google.com</code> → <b>Add project</b> (free).</li>
+    <li><b>Build → Realtime Database → Create → Test mode</b>.</li>
+    <li>Copy the <b>database URL</b> at the top (e.g. <code>https://…firebaseio.com</code>).</li>
+    <li>Paste it as <code>DB_URL</code> near the top of this file &amp; re-host.</li></ol></details>`;
+}
+
+/* QR (loads a tiny lib once; falls back to link if offline) */
 let qrLoaded=false,qrLoading=null,qrCache={};
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
 function ensureQR(){ if(qrLoaded) return Promise.resolve(true); if(qrLoading) return qrLoading;
   qrLoading=loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(()=>{qrLoaded=true;return true;}).catch(()=>false);
   return qrLoading; }
@@ -418,52 +421,40 @@ function paintQR(id,text){
   const el=document.getElementById(id); if(!el) return;
   if(qrCache[text]){ el.innerHTML=qrCache[text]; return; }
   ensureQR().then(ok=>{ const e2=document.getElementById(id); if(!e2) return;
-    if(!ok||typeof QRCode==='undefined'){ e2.innerHTML='<div class="sub" style="font-size:12px;margin:0">📶 Scan needs internet — use Share/Copy instead.</div>'; return; }
+    if(!ok||typeof QRCode==='undefined'){ e2.innerHTML='<div class="sub" style="font-size:12px;margin:0">📶 Scan needs internet — use Share/Copy.</div>'; return; }
     e2.innerHTML=''; try{ new QRCode(e2,{text:text,width:190,height:190,correctLevel:QRCode.CorrectLevel.M});
       setTimeout(()=>{ const cur=document.getElementById(id); if(cur&&cur.querySelector('img,canvas')) qrCache[text]=cur.innerHTML; },60);
     }catch(e){ e2.innerHTML='<div class="sub" style="font-size:12px;margin:0">Use Share/Copy to invite.</div>'; }
   });
 }
 
-function firebaseHelp(){
-  if(USE_FIREBASE) return '';
-  return `<details><summary>📱 Let family join on their own phones (30-sec setup)</summary>
-    <ol><li><code>console.firebase.google.com</code> → <b>Add project</b> (free).</li>
-    <li><b>Build → Realtime Database → Create</b> → <b>Test mode</b>.</li>
-    <li><b>Project settings → Your apps → Web</b> → copy config.</li>
-    <li>Paste into the <code>FB = {…}</code> block near the top of this file.</li>
-    <li>Re-host (your repo auto-deploys to GitHub Pages) and share the link.</li></ol></details>`;
-}
-
 /* ============================================================
    PLAYER
    ============================================================ */
+function enterJoin(prefill){ role='player'; code=(prefill||ROOM); renderJoin(code); }
+window.enterJoin=enterJoin;
+
 function renderJoin(prefill){
   const fromLink=!!prefill;
   app.innerHTML=`<div class="screen">
     <div class="big">${fromLink?'🎉':'🙋'}</div>
     <h2>${fromLink?'You\'re Invited!':'Join the Game'}</h2>
-    <p class="sub">${fromLink?`You're joining room <b>${esc(prefill)}</b>. Just enter your name to log in.`:'Enter the room code the host shared, and your name.'}</p>
-    ${fromLink
-      ? `<input id="jcode" type="hidden" value="${esc(prefill)}">`
-      : `<label class="fld">Room code</label><input id="jcode" placeholder="e.g. ABCD" maxlength="4" value="" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-weight:800">`}
+    <p class="sub">${fromLink?'Just enter your name to log in and play.':'Enter your name to join Prerit\'s game.'}</p>
+    <input id="jcode" type="hidden" value="${esc(prefill||ROOM)}">
     <label class="fld">Your name</label>
     <input id="jname" placeholder="Type your name…" maxlength="16" onkeydown="if(event.key==='Enter')doJoin()">
-    <div class="row"><button class="btn btn-go" onclick="doJoin()">${fromLink?'Log in &amp; Play ➜':'Join ➜'}</button>
+    <div class="row"><button class="btn btn-go" onclick="doJoin()">Log in &amp; Play ➜</button>
       <button class="btn btn-ghost" onclick="leave()">⬅ Back</button></div>
+    ${USE_CLOUD?'':'<div class="banner" style="margin-top:14px">🧪 Demo mode — only works on this device until the host adds the database URL.</div>'}
   </div>`;
-  const n=document.getElementById('jname'); if(fromLink&&n){n.focus();}
-  else{ const c=document.getElementById('jcode'); if(c)c.focus(); }
+  const n=document.getElementById('jname'); if(n)n.focus();
 }
 window.doJoin=async function(){
-  const c=(document.getElementById('jcode').value||'').trim().toUpperCase();
   const n=(document.getElementById('jname').value||'').trim();
-  if(c.length<4) return toast('Enter the 4-letter room code');
   if(!n) return toast('Enter your name');
-  role='player'; code=c; myName=n; confettiShown=false;
-  try{ await ensureBackend(); }catch(e){ return err('Could not connect. Check internet.'); }
-  Net.listen(code,onRoom);
-  myId=Net.join(code,n);
+  role='player'; code=(document.getElementById('jcode').value||ROOM).toUpperCase(); myName=n; confettiShown=false;
+  if(USE_CLOUD){ /* nothing to load */ }
+  myId=Net.join(n); saveMe(); Net.start(); render();
 };
 
 function renderPlayer(){
@@ -489,7 +480,7 @@ function playerPlaying(){
     <div class="card"><div class="qemoji">${Q.e}</div><p class="qtext">${esc(Q.q)}</p><div class="opts">${opts}</div>
     ${mine!=null?'<p class="sub" style="text-align:center;margin-top:12px">Saved! Waiting for the host to move on… ⏳</p>':''}</div>`;
 }
-window.pAns=function(i){ const prev=(room.players&&room.players[myId]&&room.players[myId].answers)?room.players[myId].answers[room.current||0]:null; Net.answer(code,myId,room.current||0,i); if(prev!==i) toast(REACTS[Math.floor(Math.random()*REACTS.length)]); };
+window.pAns=function(i){ const prev=(room.players&&room.players[myId]&&room.players[myId].answers)?room.players[myId].answers[room.current||0]:null; Net.answer(myId,room.current||0,i); if(prev!==i) toast(REACTS[Math.floor(Math.random()*REACTS.length)]); };
 function playerReview(){
   app.innerHTML=breakdownHTML(room.current||0)+`<p class="sub" style="text-align:center;margin-top:12px">👀 Follow along with the host…</p>
     <div class="row"><button class="btn btn-ghost" onclick="leave()">⬅ Leave</button></div>`;
@@ -503,11 +494,10 @@ function playerResults(){
 }
 
 /* ============================================================
-   HELPERS
+   HELPERS + ROUTING
    ============================================================ */
-function leave(){ role=null; myId=null; myName=''; hostView='lobby'; confettiShown=false; location.hash=''; renderLanding(); }
+function leave(){ role=null; myId=null; myName=''; hostView='lobby'; confettiShown=false; if(poller){clearInterval(poller);poller=null;} lastSnap=null; clearMe(); location.hash=''; renderLanding(); }
 window.leave=leave;
-function err(msg){ app.innerHTML=`<div class="screen"><div class="big">😵</div><h2>Oops</h2><p class="sub">${esc(msg)}</p><button class="btn btn-ghost" onclick="leave()">⬅ Back</button></div>`; }
 function toast(msg){ const t=document.createElement('div'); t.textContent=msg;
   t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2a1a4a;color:#fff;padding:11px 18px;border-radius:14px;font-weight:700;font-size:14px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3)';
   document.body.appendChild(t); setTimeout(()=>t.remove(),1600); }
@@ -519,8 +509,23 @@ function burstConfetti(big){
     c.animate([{transform:'translateY(0) rotate(0)',opacity:1},{transform:`translateY(${innerHeight+80}px) rotate(${540+Math.random()*360}deg)`,opacity:.9}],
       {duration:1500+Math.random()*1500,easing:'cubic-bezier(.3,.6,.5,1)'}).onfinish=()=>c.remove(); }
 }
-window.addEventListener('hashchange',()=>{ if(!role) renderLanding(); });
-renderLanding();
+
+function boot(){
+  const h=location.hash||'';
+  const me=loadMe();
+  if(h.indexOf('#host')===0){ enterHost(); return; }
+  const m=h.match(/#join=?([A-Za-z0-9]{3,10})/);
+  if(m){
+    const c=m[1].toUpperCase();
+    if(me && me.code===c && me.id){ role='player'; code=c; myId=me.id; myName=me.name||'Player'; Net.start(); render(); return; }
+    enterJoin(c); return;
+  }
+  // resume a mid-game player even without the hash (e.g. refreshed on plain URL)
+  if(me && me.id){ role='player'; code=me.code||ROOM; myId=me.id; myName=me.name||'Player'; Net.start(); render(); return; }
+  renderLanding();
+}
+window.addEventListener('hashchange',()=>{ if(!role) boot(); });
+boot();
 </script>
 </body>
 </html>
