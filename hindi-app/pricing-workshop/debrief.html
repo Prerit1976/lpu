@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 · AI-Assisted Pricing &amp; Debrief</title>
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .prompt{ background:#0e1230; color:#e8eaff; border-radius:14px; padding:16px 18px; font-family:var(--mono); font-size:.9rem; line-height:1.5; position:relative; white-space:pre-wrap; }
+  .prompt .copy{ position:absolute; top:10px; right:10px; }
+  .cert{ background:#fffdf7; border:14px solid #0e1230; border-radius:8px; padding:44px; text-align:center; position:relative; box-shadow:var(--shadow-lg); }
+  .cert:before{ content:""; position:absolute; inset:10px; border:2px solid var(--gold); border-radius:4px; pointer-events:none; }
+  .cert h1{ font-size:2.4rem; color:#0e1230; }
+  .cert .name{ font-size:2.2rem; font-weight:800; color:var(--indigo); border-bottom:2px dashed #c9cde6; display:inline-block; padding:0 30px 6px; margin:10px 0; min-width:340px; }
+  .seal{ width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--amber));display:grid;place-items:center;margin:14px auto 0;color:#3a2a00;font-weight:800;box-shadow:0 8px 20px rgba(245,158,11,.4);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="index.html" style="text-decoration:none"><span class="dot">₹</span> Pricing Workshop</a>
+  <span class="crumb">Module 4 · Debrief &amp; AI</span>
+  <span class="sep"></span>
+  <a class="crumb" href="index.html">Home</a>
+</div>
+
+<section class="hero" style="padding:44px 0 54px">
+  <div class="wrap">
+    <span class="kicker">Module 4 · 30 minutes</span>
+    <h1>The game is over. Now make it stick.</h1>
+    <p class="muted" style="max-width:60ch;font-size:1.1rem">Turn 90 minutes of competition into skills you’ll carry into any boardroom — and meet your new pricing co-pilot: AI.</p>
+  </div>
+</section>
+
+<div class="wrap" style="padding:34px 0 60px">
+
+  <!-- WHAT SEPARATED WINNERS -->
+  <div class="card reveal">
+    <span class="kicker">Debrief · 10 min</span>
+    <h2 class="mt1">What separated the winners from the rest?</h2>
+    <p class="muted">Tap each lesson and connect it to what just happened on the leaderboard.</p>
+    <div class="grid g2 mt2" id="lessons"></div>
+    <div class="trainer"><span class="lbl">🎤 Trainer says</span> Don’t lecture these — <b>ask</b>. “The team that won round 3, what did you do when inflation hit?” Let the winners teach. The lessons land harder from a peer than from a slide.</div>
+  </div>
+
+  <!-- AI PRICING -->
+  <div class="card reveal mt3">
+    <span class="kicker">AI as your pricing co-pilot · 12 min</span>
+    <h2 class="mt1">How real teams price with AI today</h2>
+    <p class="muted">Pricing analysts increasingly use AI to pressure-test decisions in seconds — modelling competitor moves, drafting rationales, and stress-testing “what if we raise 10%?”. AI won’t decide for you, but it makes you a faster, sharper decision-maker. The skill is <b>asking well</b>.</p>
+
+    <div class="card mt2" style="background:linear-gradient(135deg,#faf9ff,#eef2ff);border-color:#dcd7ff">
+      <span class="pill amber">This is a real, ₹-billion industry</span>
+      <div class="grid g4 mt2">
+        <div><b>Uber / Ola</b><p class="small muted mb0">Algorithms set <b>surge</b> prices second-by-second from live demand.</p></div>
+        <div><b>Airlines</b><p class="small muted mb0"><b>Yield management</b> — the same seat changes price hundreds of times before takeoff.</p></div>
+        <div><b>Amazon</b><p class="small muted mb0">Reprices millions of items <b>a day</b> to beat rivals and read demand.</p></div>
+        <div><b>Swiggy / BookMyShow</b><p class="small muted mb0">Fees and tickets flex with rain, timing and hype.</p></div>
+      </div>
+      <p class="small muted mt2 mb0">Behind all of it: data + models making pricing calls faster than any human could. You just played a hand-run version of exactly this.</p>
+    </div>
+
+    <div class="grid g2 mt2">
+      <div>
+        <h3>❌ A weak prompt</h3>
+        <div class="prompt" style="background:#3a1622;color:#ffd9df">What price should I sell my product at?</div>
+        <p class="small muted mt1">No context. You’ll get a generic, useless answer.</p>
+      </div>
+      <div>
+        <h3>✅ A strong prompt</h3>
+        <div class="prompt" id="goodPrompt"><button class="btn amber small copy" style="padding:5px 12px" onclick="copyText(document.getElementById('goodPrompt').innerText.replace('Copy',''))">Copy</button>Act as a pricing strategist. My product is a ₹40,000 smartphone that costs ₹24,000 to make. Two rivals sell similar phones at ₹38,000 and ₹42,000. My customers are moderately price-sensitive. My goal is maximum profit, not market share. Recommend a price, explain the trade-off in 3 bullets, and tell me one risk.</div>
+        <p class="small muted mt1">Role + numbers + rivals + customer + goal = a decision-grade answer.</p>
+      </div>
+    </div>
+
+    <div class="trainer"><span class="lbl">🎤 Trainer says</span> The formula for any good pricing prompt: <b>Role · your costs · competitor prices · customer type · your goal · ask for the trade-off and the risk.</b> Have teams paste their own simulation numbers and compare the AI’s advice to what they actually did.</div>
+
+    <!-- Copy-ready templates -->
+    <h3 class="mt3">Copy-ready prompt templates</h3>
+    <div class="grid g2 mt1" id="templates"></div>
+  </div>
+
+  <!-- OFFLINE AI ADVISOR -->
+  <div class="card reveal mt3">
+    <span class="kicker">Try it live · works offline</span>
+    <h2 class="mt1">The Pricing Advisor</h2>
+    <p class="muted">No internet needed — this built-in advisor reasons the way a good AI co-pilot would. Feed it a situation and get a recommended price band with the logic. <span class="small">(Illustrative model for the classroom, not live market data.)</span></p>
+    <div class="grid g2 mt2" style="align-items:start">
+      <div class="card" style="background:#faf9ff">
+        <label class="fld">Your cost per unit (₹)</label><input id="aiCost" type="number" value="24000">
+        <label class="fld mt2">Nearest competitor price (₹)</label><input id="aiComp" type="number" value="40000">
+        <label class="fld mt2">Customers are…</label>
+        <select id="aiSeg"><option value="elastic">Very price-sensitive (bargain hunters)</option><option value="balanced" selected>Moderately price-sensitive</option><option value="premium">Not very price-sensitive (premium buyers)</option></select>
+        <label class="fld mt2">Your goal</label>
+        <select id="aiGoal"><option value="profit" selected>Maximum profit per unit</option><option value="share">Grab market share / volume</option></select>
+        <button class="btn block mt2" onclick="advise()">Ask the advisor →</button>
+      </div>
+      <div class="card solid" id="aiOut" style="background:#0e1230;color:#e8eaff;min-height:200px">
+        <p class="muted" style="color:#aeb4e6">Your recommendation will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFLECTION -->
+  <div class="card reveal mt3">
+    <span class="kicker">Reflection · 3 min</span>
+    <h2 class="mt1">Three questions to take home</h2>
+    <ol style="font-size:1.05rem;line-height:1.9">
+      <li>What was the <b>one number</b> that changed my company’s fate, and why?</li>
+      <li>When the market shocked me, did I <b>react</b> or did I <b>panic</b>? What’s the difference?</li>
+      <li>Where in real life — a salary negotiation, a side hustle, a startup — will I use this?</li>
+    </ol>
+  </div>
+
+  <!-- CERTIFICATE -->
+  <div class="card reveal mt3">
+    <span class="kicker">Wrap-up</span>
+    <h2 class="mt1">Your participation certificate</h2>
+    <p class="muted">Type a name and print or save as PDF (Print → Save as PDF).</p>
+    <div class="row mb2 no-print">
+      <input id="certName" type="text" placeholder="Participant name" style="max-width:340px" oninput="document.getElementById('cn').textContent=this.value||'Participant Name'">
+      <button class="btn" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+    <div class="cert" id="cert">
+      <div class="brand center" style="justify-content:center"><span class="dot">₹</span> Poorit Technologies LLP</div>
+      <p class="kicker mt2" style="letter-spacing:.2em">Certificate of Participation</p>
+      <h1 style="margin:.2em 0">Pricing Strategy &amp; Business Simulation</h1>
+      <p class="muted">This certifies that</p>
+      <div class="name" id="cn">Participant Name</div>
+      <p class="muted" style="max-width:52ch;margin:10px auto">successfully completed the hands-on workshop on modern pricing strategy, customer economics, and competitive business simulation, demonstrating data-driven decision-making under real market pressure.</p>
+      <div class="seal">★</div>
+      <p class="small muted mt2">CHRIST (Deemed to be University) · Facilitated by Poorit Technologies LLP</p>
+    </div>
+  </div>
+
+  <div class="row mt3 no-print">
+    <a class="btn secondary" href="index.html">← Back to workshop home</a>
+    <a class="btn ghost" href="facilitator-guide.html">Facilitator Run-of-Show →</a>
+  </div>
+
+</div>
+
+<footer class="foot no-print"><div class="brand"><span class="dot">₹</span> Poorit Technologies LLP</div>Module 4 of 4 · Pricing Strategy &amp; Business Simulation</footer>
+
+<script src="assets/app.js"></script>
+<script>
+var LESSONS=[
+  {e:'🎯',t:'Price is a decision, not a default',d:'Winners chose a price on purpose, tied to a goal. Losers copied last round or guessed.'},
+  {e:'⚖️',t:'Margin × volume, never just one',d:'The cheapest team rarely won. Profit = how much you keep × how many you sell. You need both.'},
+  {e:'🌊',t:'Read the market, then move',d:'When inflation or a price war hit, calm teams adjusted a little. Panicked teams slashed prices and bled.'},
+  {e:'👀',t:'Your rivals are part of your price',d:'You never price in a vacuum. The winning move depended on what everyone else did — that’s strategy.'}
+];
+var box=document.getElementById('lessons');
+LESSONS.forEach(function(x){
+  var c=document.createElement('div'); c.className='card'; c.style.cursor='pointer'; c.style.background='#faf9ff';
+  c.innerHTML='<div class="row"><div style="font-size:1.6rem">'+x.e+'</div><h3 style="margin:0">'+x.t+'</h3></div><p class="muted small mt1 mb0 d" style="display:none">'+x.d+'</p>';
+  c.onclick=function(){ var d=c.querySelector('.d'); d.style.display=d.style.display==='none'?'block':'none'; };
+  box.appendChild(c);
+});
+
+var TEMPLATES=[
+  {t:'Set a launch price',p:'Act as a pricing strategist. I’m launching [product] that costs ₹[cost] to make. Competitors charge ₹[X] and ₹[Y]. My customers are [price-sensitive / premium]. Recommend a launch price, 3 bullets on the trade-off, and one risk.'},
+  {t:'React to a competitor',p:'A competitor just cut their price from ₹[old] to ₹[new]. My price is ₹[mine], my cost is ₹[cost]. Should I match, hold, or differentiate? Give me the pros and cons of each, then your recommendation.'},
+  {t:'Test a price increase',p:'I want to raise my price from ₹[old] to ₹[new] (a [Z]% rise). My cost is ₹[cost] and customers are [type]. Estimate the risk to my sales volume and tell me how to communicate the increase.'},
+  {t:'Design a bundle',p:'I sell [A] at ₹[a] and [B] at ₹[b]. Suggest a bundle price that increases my total profit, explain the psychology behind it, and warn me of one way it could backfire.'}
+];
+var tb=document.getElementById('templates');
+TEMPLATES.forEach(function(x){
+  var c=document.createElement('div');
+  c.innerHTML='<b>'+x.t+'</b><div class="prompt mt1"><button class="btn amber copy" style="padding:5px 12px" data-p="'+encodeURIComponent(x.p)+'">Copy</button>'+x.p+'</div>';
+  tb.appendChild(c);
+});
+tb.addEventListener('click',function(e){ if(e.target.classList.contains('copy')) copyText(decodeURIComponent(e.target.getAttribute('data-p'))); });
+
+/* ---------- offline pricing advisor (heuristic, mimics AI reasoning) ---------- */
+function advise(){
+  var cost=+document.getElementById('aiCost').value, comp=+document.getElementById('aiComp').value;
+  var seg=document.getElementById('aiSeg').value, goal=document.getElementById('aiGoal').value;
+  var out=document.getElementById('aiOut');
+  if(!cost||!comp||comp<=cost){ out.innerHTML='<p style="color:#fca5a5">Check your numbers — competitor price should be above your cost.</p>'; return; }
+  // base position vs competitor
+  var factor = seg==='elastic'? 0.94 : seg==='premium'? 1.10 : 1.00;
+  if(goal==='share') factor -= 0.05;
+  var target = Math.round(comp*factor/100)*100;
+  target = Math.max(cost*1.08, target); // never near/below cost
+  var low=Math.round(target*0.97/100)*100, high=Math.round(target*1.03/100)*100;
+  var margin=Math.round((target-cost)/target*100);
+  var segTxt={elastic:'price-sensitive',balanced:'moderately price-sensitive',premium:'premium'}[seg];
+
+  var bullets=[];
+  bullets.push('Anchored to the competitor at '+inr(comp)+', adjusted for a <b>'+segTxt+'</b> audience.');
+  if(seg==='premium') bullets.push('These buyers read a higher price as higher quality — a confident premium <b>signals value</b>.');
+  if(seg==='elastic') bullets.push('This crowd shops on price — sitting just <b>below</b> the competitor wins share without a ruinous war.');
+  if(goal==='share') bullets.push('Since your goal is <b>volume</b>, we leaned the price down to pull more buyers.');
+  else bullets.push('Since your goal is <b>profit</b>, we protected margin rather than chasing every sale.');
+  bullets.push('At '+inr(target)+' you keep a <b>'+margin+'% margin</b> ('+inr(target-cost)+' per unit).');
+
+  var risk = seg==='premium' ? 'If your product doesn’t <em>feel</em> premium, buyers will call the bluff and leave.'
+           : seg==='elastic' ? 'A rival could undercut you again — don’t chase them below your cost floor of '+inr(cost)+'.'
+           : 'If competitors drop hard, revisit — this assumes today’s market.';
+
+  out.innerHTML='<span class="pill amber">Advisor recommendation</span>'+
+    '<h2 style="color:#fff;margin:10px 0 2px">'+inr(target)+'</h2>'+
+    '<p class="muted" style="color:#aeb4e6;margin:0 0 12px">Suggested band: '+inr(low)+' – '+inr(high)+'</p>'+
+    '<ul style="margin:0 0 12px;padding-left:18px;line-height:1.7">'+bullets.map(function(b){return '<li>'+b+'</li>';}).join('')+'</ul>'+
+    '<div style="background:rgba(245,158,11,.15);border-radius:10px;padding:10px 14px"><b style="color:var(--gold)">⚠ Watch out:</b> '+risk+'</div>';
+}
+advise();
+
+makeTimer(30);
+</script>
+</body>
+</html>
