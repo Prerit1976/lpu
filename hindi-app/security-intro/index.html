@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cybersecurity 101 — A Flavour of Security for Engineers</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-2: #11172e;
+    --panel: #161d3a;
+    --ink: #e6ecff;
+    --muted: #8e97c0;
+    --accent: #5eead4;
+    --accent-2: #f472b6;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --ok: #22c55e;
+    --line: rgba(255,255,255,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: radial-gradient(1200px 800px at 20% -10%, #1b2350 0%, transparent 60%),
+                radial-gradient(900px 600px at 110% 10%, #3b1248 0%, transparent 55%),
+                var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    scroll-behavior: smooth;
+  }
+
+  /* Top Nav */
+  nav.top {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: rgba(11, 16, 32, 0.75);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  nav.top .brand {
+    font-weight: 700; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  nav.top a {
+    color: var(--muted); text-decoration: none; font-size: 14px;
+    padding: 6px 10px; border-radius: 6px; transition: all 0.15s;
+  }
+  nav.top a:hover { color: var(--ink); background: rgba(255,255,255,0.05); }
+
+  /* Hero */
+  header.hero {
+    padding: 80px 24px 60px;
+    text-align: center;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--accent);
+    font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  header.hero h1 {
+    font-size: clamp(36px, 6vw, 64px);
+    line-height: 1.1; margin: 0 0 16px;
+    background: linear-gradient(180deg, #fff 0%, #b9c2e8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  header.hero p.tag {
+    font-size: 20px; color: var(--muted); max-width: 720px; margin: 0 auto 40px;
+  }
+
+  /* Schedule strip */
+  .schedule {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    max-width: 1100px; margin: 0 auto 40px;
+    padding: 0 24px;
+  }
+  .slot {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .slot:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .slot .time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--accent); letter-spacing: 0.5px;
+  }
+  .slot .title { font-weight: 600; font-size: 14px; margin-top: 4px; }
+
+  /* Sections */
+  section {
+    max-width: 1100px; margin: 0 auto;
+    padding: 80px 24px;
+    border-top: 1px solid var(--line);
+  }
+  section h2 {
+    font-size: clamp(28px, 4vw, 44px);
+    margin: 0 0 8px;
+  }
+  section .eyebrow {
+    color: var(--accent); font-size: 14px; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  section p.lede { color: var(--muted); font-size: 18px; max-width: 720px; margin-bottom: 32px; }
+
+  /* Cards grid */
+  .grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+  .card .icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 16px;
+    color: #0b1020;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 18px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  /* CIA triad */
+  .cia {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+  }
+  .cia .pill {
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  }
+  .cia .pill .big {
+    font-size: 40px; font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .cia .pill .label { font-size: 13px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+  /* Brute-force demo */
+  .demo {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 32px;
+  }
+  .demo h3 { margin-top: 0; }
+  .demo .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+  .demo input, .demo select {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    min-width: 200px;
+  }
+  .demo input:focus, .demo select:focus { outline: none; border-color: var(--accent); }
+  .demo button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: 0;
+    color: #0b1020;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .result {
+    margin-top: 16px;
+    padding: 20px;
+    background: var(--bg-2);
+    border-radius: 10px;
+    border-left: 4px solid var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .result .big-time {
+    font-size: 28px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .result .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .strength-bar {
+    height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-top: 12px;
+  }
+  .strength-bar .fill { height: 100%; transition: all 0.3s; border-radius: 4px; }
+
+  /* Threats table */
+  .tvr {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    margin-top: 32px;
+  }
+  .tvr .box {
+    padding: 24px; border-radius: 14px; border: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .tvr .box h4 { margin: 0 0 8px; color: var(--accent); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }
+  .tvr .box .ex { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .tvr .arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 24px;
+  }
+
+  /* Timeline (breaches) */
+  .timeline {
+    position: relative;
+    margin-top: 32px;
+    padding-left: 32px;
+    border-left: 2px solid var(--line);
+  }
+  .event {
+    position: relative;
+    padding: 0 0 32px 24px;
+  }
+  .event::before {
+    content: '';
+    position: absolute;
+    left: -33px; top: 8px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.2);
+  }
+  .event .year { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .event h4 { margin: 4px 0 6px; font-size: 18px; }
+  .event .impact { display: inline-block; margin-top: 8px; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .event p { color: var(--muted); margin: 6px 0 0; font-size: 14px; }
+
+  /* Attack surface diagram */
+  .surface {
+    margin-top: 32px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 32px;
+    text-align: center;
+  }
+  .surface svg { max-width: 100%; height: auto; }
+  .legend {
+    display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+    margin-top: 20px; font-size: 13px; color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  /* Career section */
+  .careers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .role {
+    padding: 20px;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    transition: all 0.2s;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  .role:hover { border-color: var(--accent-2); transform: translateY(-2px); }
+  .role .pay { font-size: 12px; color: var(--ok); font-family: 'JetBrains Mono', monospace; margin-top: 8px; }
+
+  /* Event links */
+  .event a.read-more {
+    display: inline-block; margin-top: 8px; margin-left: 8px;
+    color: var(--accent); text-decoration: none; font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .event a.read-more:hover { text-decoration: underline; }
+
+  /* Labs */
+  .lab {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px;
+    margin-top: 24px;
+  }
+  .lab h3 { margin-top: 0; display: flex; align-items: center; gap: 10px; }
+  .lab h3 .tag {
+    font-size: 10px; padding: 3px 8px; border-radius: 999px;
+    background: rgba(94,234,212,0.15); color: var(--accent);
+    border: 1px solid rgba(94,234,212,0.3); letter-spacing: 1px;
+  }
+  .lab .lab-desc { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+  .lab textarea, .lab input[type="text"], .lab input[type="password"], .lab input[type="number"] {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    resize: vertical;
+  }
+  .lab textarea:focus, .lab input:focus { outline: none; border-color: var(--accent); }
+  .lab button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: 0; color: #0b1020; font-weight: 700;
+    padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  .lab button.ghost {
+    background: transparent; color: var(--ink); border: 1px solid var(--line);
+  }
+  .lab .output {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-2);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    word-break: break-all;
+    border-left: 3px solid var(--accent);
+  }
+  .lab .output.danger { border-left-color: var(--danger); }
+  .lab .output.ok { border-left-color: var(--ok); }
+  .lab .hash-row { display: grid; gap: 12px; margin-top: 12px; }
+  .lab .hash-row .label { font-size: 12px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .lab .diff-char { background: rgba(239,68,68,0.4); color: #fff; padding: 0 2px; border-radius: 2px; }
+
+  /* Phishing game */
+  .phish-card {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .phish-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    word-break: break-all;
+    padding: 12px;
+    background: #0b1020;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    color: #b9c2e8;
+  }
+  .phish-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .phish-actions button { flex: 1; min-width: 120px; }
+  .verdict { margin-top: 12px; padding: 12px; border-radius: 6px; font-size: 13px; display: none; }
+  .verdict.show { display: block; }
+  .verdict.right { background: rgba(34,197,94,0.15); color: #86efac; border-left: 3px solid var(--ok); }
+  .verdict.wrong { background: rgba(239,68,68,0.15); color: #fca5a5; border-left: 3px solid var(--danger); }
+
+  /* SQL injection */
+  .fake-login {
+    background: linear-gradient(180deg, #1a2447 0%, #11172e 100%);
+    padding: 24px;
+    border-radius: 10px;
+    margin-top: 16px;
+    max-width: 360px;
+  }
+  .fake-login label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .fake-login input { margin-bottom: 12px; }
+  .query-display {
+    margin-top: 16px; padding: 14px; background: #000;
+    border-radius: 6px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: #5eead4; overflow-x: auto;
+  }
+  .query-display .keyword { color: #f472b6; }
+  .query-display .injected { background: rgba(239,68,68,0.4); padding: 1px 3px; border-radius: 2px; color: #fff; }
+
+  /* Resources */
+  .res-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .res {
+    display: block;
+    padding: 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+  }
+  .res:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .res .res-title { font-weight: 700; color: var(--accent); font-size: 15px; }
+  .res .res-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .res .res-cat { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent-2); margin-bottom: 4px; }
+
+  /* Quiz */
+  .quiz {
+    margin-top: 32px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px;
+  }
+  .question { margin-bottom: 28px; }
+  .question p.q { font-weight: 600; font-size: 16px; margin: 0 0 12px; }
+  .options { display: grid; gap: 8px; }
+  .options label {
+    display: block;
+    padding: 12px 16px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+  }
+  .options label:hover { border-color: var(--accent); background: rgba(94,234,212,0.05); }
+  .options input { margin-right: 10px; accent-color: var(--accent); }
+  .options label.correct { border-color: var(--ok); background: rgba(34,197,94,0.1); }
+  .options label.wrong { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+  .explanation { margin-top: 10px; padding: 12px; background: rgba(94,234,212,0.05); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13px; color: var(--muted); display: none; }
+  .explanation.show { display: block; }
+
+  /* Footer */
+  footer {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--line);
+    margin-top: 60px;
+  }
+  footer .heart { color: var(--accent-2); }
+
+  /* Stat highlights */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin: 32px 0;
+  }
+  .stat {
+    text-align: center;
+    padding: 24px;
+    background: var(--panel);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+  }
+  .stat .number {
+    font-size: 36px; font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .stat .label { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  @media (max-width: 700px) {
+    .tvr { grid-template-columns: 1fr; }
+    .tvr .arrow { transform: rotate(90deg); }
+    .cia { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="previewBanner" style="display:none;background:linear-gradient(90deg,#f59e0b,#f472b6);color:#0b1020;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;">
+  ⚠ Sandboxed preview detected — external links may not navigate here. Click any link and you'll get a copy-able URL. <a id="openExternal" href="#" style="color:#0b1020;text-decoration:underline;">Open the page in your browser</a> for the full experience.
+</div>
+
+<!-- Link fallback modal -->
+<div id="linkModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#161d3a;border:1px solid rgba(255,255,255,0.15);border-radius:14px;max-width:500px;width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <h3 style="margin:0 0 8px;color:#5eead4;">Sandbox blocked this link</h3>
+    <p style="color:#8e97c0;font-size:14px;margin:0 0 16px;">This preview can't open external pages directly. Copy the URL or open it in your browser:</p>
+    <div id="linkModalUrl" style="background:#0b1020;padding:14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5eead4;word-break:break-all;margin-bottom:16px;border:1px solid rgba(94,234,212,0.3);"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="linkModalCopy" style="flex:1;background:linear-gradient(135deg,#5eead4,#f472b6);border:0;color:#0b1020;font-weight:700;padding:12px 16px;border-radius:8px;cursor:pointer;font-size:14px;">📋 Copy URL</button>
+      <a id="linkModalOpen" href="#" target="_blank" rel="noopener" style="flex:1;text-align:center;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#e6ecff;padding:12px 16px;border-radius:8px;cursor:pointer;font-size:14px;text-decoration:none;">↗ Try opening</a>
+      <button id="linkModalClose" style="flex:0 0 auto;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#8e97c0;padding:12px 16px;border-radius:8px;cursor:pointer;font-size:14px;">Close</button>
+    </div>
+    <div id="linkModalToast" style="display:none;margin-top:12px;padding:8px 12px;background:rgba(34,197,94,0.15);color:#86efac;border-radius:6px;font-size:13px;text-align:center;">✓ Copied to clipboard</div>
+  </div>
+</div>
+
+<nav class="top">
+  <span class="brand">🔐 CYBERSEC 101</span>
+  <a href="#intro">Intro</a>
+  <a href="#importance">Why Security</a>
+  <a href="#tvr">Threats &amp; Risks</a>
+  <a href="#bruteforce">Brute Force</a>
+  <a href="#labs">🧪 Labs</a>
+  <a href="#breaches">Real Breaches</a>
+  <a href="#surface">Attack Surface</a>
+  <a href="#quiz">Quick Quiz</a>
+  <a href="#resources">Resources</a>
+</nav>
+
+<header class="hero">
+  <span class="badge">Day 1 · A Flavour of Security</span>
+  <h1>The Invisible War Behind Every Click</h1>
+  <p class="tag">A 100-minute crash course for engineering students — the why, what, and wow of cybersecurity.</p>
+</header>
+
+<div class="schedule">
+  <div class="slot"><div class="time">11:00 – 11:15</div><div class="title">Course Intro &amp; Careers</div></div>
+  <div class="slot"><div class="time">11:15 – 11:35</div><div class="title">Importance of Security</div></div>
+  <div class="slot"><div class="time">11:35 – 12:00</div><div class="title">Threats, Vulnerabilities &amp; Risks</div></div>
+  <div class="slot"><div class="time">12:00 – 12:20</div><div class="title">Real Security Breaches</div></div>
+  <div class="slot"><div class="time">12:20 – 12:40</div><div class="title">Exposure &amp; Attack Surface</div></div>
+</div>
+
+<!-- 1. INTRO + CAREERS -->
+<section id="intro">
+  <div class="eyebrow">11:00 – 11:15</div>
+  <h2>Course Introduction &amp; Career Opportunities</h2>
+  <p class="lede">Cybersecurity isn't a niche — it's the operating layer of everything from your UPI payment to a power grid. Demand for skilled engineers is outpacing supply by 4 million worldwide.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="number">4M+</div><div class="label">Global talent gap</div></div>
+    <div class="stat"><div class="number">$10.5T</div><div class="label">Annual cybercrime cost by 2025</div></div>
+    <div class="stat"><div class="number">35%</div><div class="label">YoY job growth in India</div></div>
+    <div class="stat"><div class="number">0%</div><div class="label">Unemployment in the field</div></div>
+  </div>
+
+  <h3 style="margin-top: 40px;">Where can security take you?</h3>
+  <div class="careers">
+    <a class="role" href="https://www.linkedin.com/jobs/penetration-tester-jobs/" target="_blank" rel="noopener"><strong>Penetration Tester</strong><br><span style="color:var(--muted);font-size:13px;">Break things legally. Find bugs before the bad guys.</span><div class="pay">₹6L – ₹35L /yr →</div></a>
+    <a class="role" href="https://www.linkedin.com/jobs/security-analyst-jobs/" target="_blank" rel="noopener"><strong>Security Analyst (SOC)</strong><br><span style="color:var(--muted);font-size:13px;">Frontline defender — monitor, detect, respond.</span><div class="pay">₹4L – ₹18L /yr →</div></a>
+    <a class="role" href="https://www.linkedin.com/jobs/cloud-security-engineer-jobs/" target="_blank" rel="noopener"><strong>Cloud Security Engineer</strong><br><span style="color:var(--muted);font-size:13px;">Secure AWS / Azure / GCP infrastructure.</span><div class="pay">₹10L – ₹50L /yr →</div></a>
+    <a class="role" href="https://www.linkedin.com/jobs/application-security-jobs/" target="_blank" rel="noopener"><strong>Application Security</strong><br><span style="color:var(--muted);font-size:13px;">Bake security into the SDLC. Hunt OWASP bugs.</span><div class="pay">₹8L – ₹40L /yr →</div></a>
+    <a class="role" href="https://hackerone.com/opportunities/all" target="_blank" rel="noopener"><strong>Bug Bounty Hunter</strong><br><span style="color:var(--muted);font-size:13px;">Freelance — get paid per vulnerability you find.</span><div class="pay">Unlimited upside →</div></a>
+    <a class="role" href="https://www.linkedin.com/jobs/ciso-jobs/" target="_blank" rel="noopener"><strong>CISO / Security Architect</strong><br><span style="color:var(--muted);font-size:13px;">Strategy &amp; design. The C-suite of security.</span><div class="pay">₹50L – ₹3 Cr /yr →</div></a>
+  </div>
+</section>
+
+<!-- 2. IMPORTANCE -->
+<section id="importance">
+  <div class="eyebrow">11:15 – 11:35</div>
+  <h2>Why Security Matters</h2>
+  <p class="lede">Every digital interaction implicitly trusts something. Security is the discipline of making that trust deliberate, measurable, and defensible.</p>
+
+  <p>At its core, security protects three things — the <strong>CIA Triad</strong>:</p>
+
+  <div class="cia">
+    <div class="pill">
+      <div class="big">C</div>
+      <div class="label">Confidentiality</div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0;">Only the right people see the data. (Encryption, access control)</p>
+    </div>
+    <div class="pill">
+      <div class="big">I</div>
+      <div class="label">Integrity</div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0;">Data isn't tampered with. (Hashing, signatures)</p>
+    </div>
+    <div class="pill">
+      <div class="big">A</div>
+      <div class="label">Availability</div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0;">Systems are up when needed. (Backups, DDoS protection)</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="icon">💰</div>
+      <h3>Financial Impact</h3>
+      <p>Average cost of a data breach in 2024: <strong>$4.88 million</strong>. A single compromised admin account can erase years of profit.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🏛️</div>
+      <h3>Legal &amp; Regulatory</h3>
+      <p>GDPR, India's DPDP Act, HIPAA. Fines can hit <strong>4% of global revenue</strong>. Engineers are increasingly liable.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🤝</div>
+      <h3>Trust &amp; Reputation</h3>
+      <p>Users abandon platforms after breaches. <strong>83% of consumers</strong> stop spending with a company for months post-incident.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🌐</div>
+      <h3>National Security</h3>
+      <p>Power grids, hospitals, telecom — all run on software. Cyber attacks are now acts of war.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3. THREATS / VULNS / RISKS -->
+<section id="tvr">
+  <div class="eyebrow">11:35 – 12:00 · Part 1</div>
+  <h2>Threats, Vulnerabilities &amp; Risks</h2>
+  <p class="lede">These three words get used interchangeably. They shouldn't be. Understanding the difference is the foundation of every security decision.</p>
+
+  <div class="tvr">
+    <div class="box">
+      <h4>🎯 Threat</h4>
+      <strong>Who or what could harm you.</strong>
+      <p class="ex">Example: A hacker, a disgruntled employee, malware, even a flood.</p>
+    </div>
+    <div class="arrow">×</div>
+    <div class="box">
+      <h4>🩹 Vulnerability</h4>
+      <strong>The weakness they exploit.</strong>
+      <p class="ex">Example: An unpatched server, a weak password, an open S3 bucket.</p>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:32px;color:var(--accent);margin:24px 0;">↓</div>
+
+  <div style="text-align:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0b1020;padding:24px;border-radius:14px;">
+    <strong style="font-size:24px;">= RISK</strong>
+    <p style="margin:8px 0 0;">The probability and impact of the threat exploiting the vulnerability.</p>
+  </div>
+
+  <p style="margin-top:32px;background:var(--panel);padding:20px;border-radius:10px;border-left:4px solid var(--warn);"><strong>Real-world analogy:</strong> A burglar (threat) seeing an unlocked window (vulnerability) creates the risk of a break-in. Lock the window — no vulnerability — and the threat still exists but the risk drops near zero.</p>
+</section>
+
+<!-- 4. BRUTE FORCE INTERACTIVE DEMO -->
+<section id="bruteforce">
+  <div class="eyebrow">11:35 – 12:00 · Part 2</div>
+  <h2>Password &amp; Brute Force Attacks</h2>
+  <p class="lede">A brute-force attack is the most primitive attack — try every possible combination until something works. Modern GPUs can guess <strong>billions of passwords per second.</strong> Let's see how your password holds up.</p>
+
+  <div class="demo">
+    <h3>🔓 Try It: How long would your password survive?</h3>
+    <div class="row">
+      <input type="text" id="pwd" placeholder="Type a sample password (do NOT use your real one)" autocomplete="off" />
+      <select id="attacker">
+        <option value="1000">Online attack — 1,000/sec</option>
+        <option value="1000000000" selected>Offline GPU — 1 billion/sec</option>
+        <option value="100000000000">Nation-state cluster — 100 billion/sec</option>
+      </select>
+    </div>
+    <div class="result" id="result">
+      <div>Strength: <strong id="strength">—</strong></div>
+      <div class="strength-bar"><div class="fill" id="strengthBar" style="width:0%;background:var(--muted);"></div></div>
+      <div style="margin-top:16px;">Time to crack:</div>
+      <div class="big-time" id="cracktime">—</div>
+      <div class="note" id="cracknote">Type a password above to see the estimate.</div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:32px;">
+    <div class="card">
+      <div class="icon">🎲</div>
+      <h3>Dictionary Attack</h3>
+      <p>Try common words and leaked passwords first. "password123" — cracked in <strong>microseconds</strong>.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🌈</div>
+      <h3>Rainbow Tables</h3>
+      <p>Precomputed hash → password lookups. Defeated by <strong>salting</strong> your hashes.</p>
+    </div>
+    <div class="card">
+      <div class="icon">💧</div>
+      <h3>Credential Stuffing</h3>
+      <p>Take leaked username/password pairs from one site, try them everywhere. <strong>This works embarrassingly often.</strong></p>
+    </div>
+    <div class="card">
+      <div class="icon">🔑</div>
+      <h3>Defenses</h3>
+      <p>MFA, rate limiting, lockouts, password managers, passkeys. <strong>Length &gt; complexity.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- 4.5 HANDS-ON LABS -->
+<section id="labs">
+  <div class="eyebrow">Hands-On</div>
+  <h2>🧪 Try It Yourself — 4 Mini Labs</h2>
+  <p class="lede">Reading about security is forgettable. Doing it is not. Each lab below runs entirely in your browser — nothing is sent anywhere.</p>
+
+  <!-- LAB 1: Phishing Spotter -->
+  <div class="lab">
+    <h3>🎣 Lab 1 — Phishing Spotter <span class="tag">5 ROUNDS</span></h3>
+    <p class="lab-desc">A URL appears below. Is it the real site or a phishing copy? Look carefully — typosquatting, weird subdomains, fake TLDs.</p>
+    <div id="phishGame"></div>
+    <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <button onclick="resetPhish()" class="ghost">Restart Game</button>
+      <div id="phishScore" style="color:var(--muted);font-size:14px;"></div>
+    </div>
+  </div>
+
+  <!-- LAB 2: Hash Avalanche -->
+  <div class="lab">
+    <h3>#️⃣ Lab 2 — Hash Avalanche Effect <span class="tag">SHA-256</span></h3>
+    <p class="lab-desc">Cryptographic hashes have a magic property: change <em>one character</em>, and the entire output looks completely different. This is what makes passwords storable safely.</p>
+    <div class="hash-row">
+      <div>
+        <div class="label">Input A</div>
+        <input type="text" id="hashA" value="Hello, security!" />
+      </div>
+      <div>
+        <div class="label">Input B (try changing one letter)</div>
+        <input type="text" id="hashB" value="Hello, security?" />
+      </div>
+    </div>
+    <div class="output" id="hashOutA" style="margin-top:16px;">SHA-256 of A: —</div>
+    <div class="output" id="hashOutB">SHA-256 of B: —</div>
+    <p style="margin-top:12px;font-size:13px;color:var(--muted);">🔴 Red highlights show where the two hashes differ. Typically ~50% of bits flip from a single character change — this is the <strong>avalanche effect</strong>.</p>
+  </div>
+
+  <!-- LAB 3: SQL Injection -->
+  <div class="lab">
+    <h3>💉 Lab 3 — SQL Injection Playground <span class="tag">OWASP #3</span></h3>
+    <p class="lab-desc">This is a <em>simulated</em> vulnerable login form. Try logging in as <code style="color:var(--accent);">admin</code> with any password. Then try the <strong>classic injection</strong>: paste <code style="background:rgba(239,68,68,0.2);color:#fca5a5;padding:2px 6px;border-radius:3px;">' OR '1'='1</code> in the password field.</p>
+    <div class="fake-login">
+      <label>Username</label>
+      <input type="text" id="sqlUser" value="admin" />
+      <label>Password</label>
+      <input type="text" id="sqlPass" placeholder="try: ' OR '1'='1" />
+      <button onclick="trySqlLogin()" style="width:100%;margin-top:8px;">Login</button>
+    </div>
+    <div class="query-display" id="sqlQuery">SQL query will appear here…</div>
+    <div class="output" id="sqlResult" style="display:none;"></div>
+    <p style="margin-top:16px;font-size:13px;color:var(--muted);"><strong>The fix:</strong> Use <em>parameterised queries</em> (a.k.a. prepared statements). Never concatenate user input into SQL strings.</p>
+  </div>
+
+  <!-- LAB 4: Caesar Cipher -->
+  <div class="lab">
+    <h3>🔐 Lab 4 — Caesar Cipher (2,000-year-old encryption) <span class="tag">CRYPTO 101</span></h3>
+    <p class="lab-desc">Julius Caesar shifted each letter by 3 to hide military orders. Today it takes a computer 0.0001 seconds to crack — but it's still the perfect intro to encryption.</p>
+    <div class="hash-row">
+      <div>
+        <div class="label">Message</div>
+        <textarea id="caesarMsg" rows="2">Attack at dawn</textarea>
+      </div>
+      <div>
+        <div class="label">Shift (1–25)</div>
+        <input type="number" id="caesarShift" value="3" min="1" max="25" />
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button onclick="caesarEncrypt()">Encrypt →</button>
+      <button onclick="caesarDecrypt()" class="ghost">← Decrypt</button>
+      <button onclick="caesarBrute()" class="ghost">🔓 Brute-force all 25 shifts</button>
+    </div>
+    <div class="output" id="caesarOut">Encrypted text will appear here…</div>
+  </div>
+
+  <p style="margin-top:32px;text-align:center;color:var(--muted);font-size:14px;">
+    Want a full playground? Try <a href="https://tryhackme.com" target="_blank" rel="noopener" style="color:var(--accent);">TryHackMe</a> or <a href="https://www.hackthebox.com" target="_blank" rel="noopener" style="color:var(--accent);">HackTheBox</a> next.
+  </p>
+</section>
+
+<!-- 5. REAL BREACHES -->
+<section id="breaches">
+  <div class="eyebrow">12:00 – 12:20</div>
+  <h2>Security Breaches: Real Incidents</h2>
+  <p class="lede">Theory is one thing. Watching billion-dollar companies fall is another. Here's a quick tour through the breaches that reshaped the industry.</p>
+
+  <div class="timeline">
+    <div class="event">
+      <div class="year">2013 · Target</div>
+      <h4>40 million credit cards stolen</h4>
+      <p>Attackers got in through Target's <strong>HVAC vendor</strong>. Lesson: your security is only as strong as your weakest third party.</p>
+      <span class="impact">$292M loss · CEO fired</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/2013_Target_Corporation_cyberattack" target="_blank" rel="noopener">read more →</a>
+    </div>
+    <div class="event">
+      <div class="year">2017 · Equifax</div>
+      <h4>147 million identities exposed</h4>
+      <p>An <strong>unpatched Apache Struts vulnerability</strong> sat for 2 months. SSNs, addresses, DOBs of nearly half of America leaked.</p>
+      <span class="impact">$1.4B settlement</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/2017_Equifax_data_breach" target="_blank" rel="noopener">read more →</a>
+    </div>
+    <div class="event">
+      <div class="year">2017 · WannaCry</div>
+      <h4>200,000+ machines across 150 countries</h4>
+      <p>Ransomware exploited a leaked NSA tool (EternalBlue). The UK's NHS shut down hospitals. Real patients sent home.</p>
+      <span class="impact">$4B+ damage</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/WannaCry_ransomware_attack" target="_blank" rel="noopener">read more →</a>
+    </div>
+    <div class="event">
+      <div class="year">2020 · SolarWinds</div>
+      <h4>18,000 organisations including US gov</h4>
+      <p>A <strong>supply-chain attack</strong> — attackers poisoned a software update. Pentagon, Microsoft, FireEye all compromised.</p>
+      <span class="impact">Nation-state level</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/2020_United_States_federal_government_data_breach" target="_blank" rel="noopener">read more →</a>
+    </div>
+    <div class="event">
+      <div class="year">2021 · Colonial Pipeline</div>
+      <h4>US East Coast fuel shortages for 6 days</h4>
+      <p>One <strong>compromised VPN password</strong> (no MFA) shut down 45% of the East Coast's fuel supply. Ransom: $4.4M.</p>
+      <span class="impact">Critical infrastructure</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/Colonial_Pipeline_ransomware_attack" target="_blank" rel="noopener">read more →</a>
+    </div>
+    <div class="event">
+      <div class="year">2023 · MOVEit</div>
+      <h4>2,600+ organisations, 90M+ records</h4>
+      <p>A zero-day in a file transfer tool. BBC, British Airways, US Department of Energy — all hit.</p>
+      <span class="impact">$15B est. impact</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/2023_MOVEit_data_breach" target="_blank" rel="noopener">read more →</a>
+    </div>
+    <div class="event">
+      <div class="year">2022 · AIIMS Delhi</div>
+      <h4>India's premier hospital taken offline</h4>
+      <p>Ransomware crippled patient records for 2 weeks. Highlights how unprepared Indian healthcare is.</p>
+      <span class="impact">National scandal</span>
+      <a class="read-more" href="https://en.wikipedia.org/wiki/2022_AIIMS_Delhi_cyberattack" target="_blank" rel="noopener">read more →</a>
+    </div>
+  </div>
+</section>
+
+<!-- 6. ATTACK SURFACE -->
+<section id="surface">
+  <div class="eyebrow">12:20 – 12:40</div>
+  <h2>Exposure &amp; Attack Surface</h2>
+  <p class="lede">Your <strong>attack surface</strong> is every point where an attacker could try to get in. Every API, every employee, every cloud service, every IoT device. Most companies don't even know how big theirs is.</p>
+
+  <div class="surface">
+    <svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg">
+      <!-- Inner protected zone -->
+      <circle cx="350" cy="210" r="70" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="2" stroke-dasharray="4,4" />
+      <text x="350" y="205" text-anchor="middle" fill="#22c55e" font-size="14" font-weight="700">CORE ASSETS</text>
+      <text x="350" y="225" text-anchor="middle" fill="#e6ecff" font-size="11">data · code · IP</text>
+
+      <!-- Surface ring -->
+      <circle cx="350" cy="210" r="170" fill="none" stroke="rgba(244,114,182,0.4)" stroke-width="2" stroke-dasharray="2,4" />
+
+      <!-- Attack vectors as bubbles -->
+      <g>
+        <circle cx="350" cy="40" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="350" y="38" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Web App</text>
+        <text x="350" y="52" text-anchor="middle" fill="#8e97c0" font-size="9">SQLi · XSS · auth</text>
+
+        <circle cx="540" cy="100" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="540" y="98" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">APIs</text>
+        <text x="540" y="112" text-anchor="middle" fill="#8e97c0" font-size="9">BOLA · keys</text>
+
+        <circle cx="620" cy="240" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="620" y="238" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Cloud</text>
+        <text x="620" y="252" text-anchor="middle" fill="#8e97c0" font-size="9">S3 · IAM</text>
+
+        <circle cx="510" cy="370" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="510" y="368" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Employees</text>
+        <text x="510" y="382" text-anchor="middle" fill="#8e97c0" font-size="9">phishing</text>
+
+        <circle cx="190" cy="370" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="190" y="368" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Mobile</text>
+        <text x="190" y="382" text-anchor="middle" fill="#8e97c0" font-size="9">app · device</text>
+
+        <circle cx="80" cy="240" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="80" y="238" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Vendors</text>
+        <text x="80" y="252" text-anchor="middle" fill="#8e97c0" font-size="9">supply chain</text>
+
+        <circle cx="160" cy="100" r="36" fill="#11172e" stroke="#f472b6" stroke-width="2"/>
+        <text x="160" y="98" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">IoT</text>
+        <text x="160" y="112" text-anchor="middle" fill="#8e97c0" font-size="9">default pwds</text>
+      </g>
+
+      <!-- Connecting lines -->
+      <g stroke="rgba(244,114,182,0.25)" stroke-width="1" stroke-dasharray="2,3">
+        <line x1="350" y1="76" x2="350" y2="140"/>
+        <line x1="510" y1="124" x2="408" y2="178"/>
+        <line x1="588" y1="232" x2="420" y2="210"/>
+        <line x1="480" y1="346" x2="395" y2="265"/>
+        <line x1="220" y1="346" x2="305" y2="265"/>
+        <line x1="112" y1="232" x2="280" y2="210"/>
+        <line x1="190" y1="124" x2="290" y2="178"/>
+      </g>
+    </svg>
+    <div class="legend">
+      <span><span class="dot" style="background:#22c55e;"></span> Crown jewels you must protect</span>
+      <span><span class="dot" style="background:#f472b6;"></span> Attack surface (entry points)</span>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:32px;">
+    <div class="card">
+      <div class="icon">📈</div>
+      <h3>Surface ↑ Risk ↑</h3>
+      <p>Every new service, port, library, or endpoint <strong>expands</strong> what an attacker can target.</p>
+    </div>
+    <div class="card">
+      <div class="icon">👻</div>
+      <h3>Shadow IT</h3>
+      <p>That side project on a dev's personal AWS? That forgotten subdomain? Attackers find them <strong>before you do</strong>.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🧹</div>
+      <h3>Reduce, Don't Just Defend</h3>
+      <p>Decommission what you don't use. Close unused ports. <strong>Less attack surface = less to defend.</strong></p>
+    </div>
+    <div class="card">
+      <div class="icon">🔭</div>
+      <h3>Continuous Discovery</h3>
+      <p>Your surface changes weekly. Tools like Shodan, ASM platforms, and bug bounties map it in real time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz">
+  <div class="eyebrow">Test Yourself</div>
+  <h2>5-Question Sanity Check</h2>
+  <p class="lede">Pick the best answer. Click to reveal explanations.</p>
+
+  <div class="quiz">
+    <div class="question" data-correct="b">
+      <p class="q">1. Which of these is a <em>vulnerability</em> (not a threat)?</p>
+      <div class="options">
+        <label><input type="radio" name="q1" value="a"/> A hacker group</label>
+        <label><input type="radio" name="q1" value="b"/> An unpatched server</label>
+        <label><input type="radio" name="q1" value="c"/> A ransomware demand</label>
+        <label><input type="radio" name="q1" value="d"/> A flood</label>
+      </div>
+      <div class="explanation">A vulnerability is a <strong>weakness</strong>. Threats are the actors/events that exploit them. Risk = Threat × Vulnerability × Impact.</div>
+    </div>
+
+    <div class="question" data-correct="c">
+      <p class="q">2. Which password is hardest to brute-force?</p>
+      <div class="options">
+        <label><input type="radio" name="q2" value="a"/> P@ssw0rd!</label>
+        <label><input type="radio" name="q2" value="b"/> Tr0ub4dor&amp;3</label>
+        <label><input type="radio" name="q2" value="c"/> correct horse battery staple</label>
+        <label><input type="radio" name="q2" value="d"/> Admin@2024</label>
+      </div>
+      <div class="explanation"><strong>Length crushes complexity.</strong> A 28-character passphrase takes trillions of years to crack vs. seconds for short "complex" passwords. (xkcd #936 was right.)</div>
+    </div>
+
+    <div class="question" data-correct="b">
+      <p class="q">3. Colonial Pipeline (2021) was breached because of…</p>
+      <div class="options">
+        <label><input type="radio" name="q3" value="a"/> A zero-day in Windows</label>
+        <label><input type="radio" name="q3" value="b"/> One leaked VPN password, no MFA</label>
+        <label><input type="radio" name="q3" value="c"/> A nation-state APT</label>
+        <label><input type="radio" name="q3" value="d"/> A phishing email to the CEO</label>
+      </div>
+      <div class="explanation">Yes — one password from a previous breach, reused on a legacy VPN account, no MFA. Shut down 45% of US East Coast fuel.</div>
+    </div>
+
+    <div class="question" data-correct="d">
+      <p class="q">4. The CIA Triad stands for…</p>
+      <div class="options">
+        <label><input type="radio" name="q4" value="a"/> Code, Infrastructure, Apps</label>
+        <label><input type="radio" name="q4" value="b"/> Cyber, Internet, Authentication</label>
+        <label><input type="radio" name="q4" value="c"/> Compliance, Identity, Access</label>
+        <label><input type="radio" name="q4" value="d"/> Confidentiality, Integrity, Availability</label>
+      </div>
+      <div class="explanation">The three foundational goals every security control maps back to.</div>
+    </div>
+
+    <div class="question" data-correct="a">
+      <p class="q">5. Best way to reduce attack surface?</p>
+      <div class="options">
+        <label><input type="radio" name="q5" value="a"/> Decommission unused services and close unused ports</label>
+        <label><input type="radio" name="q5" value="b"/> Buy more firewalls</label>
+        <label><input type="radio" name="q5" value="c"/> Train one person to be the security expert</label>
+        <label><input type="radio" name="q5" value="d"/> Hide the server room</label>
+      </div>
+      <div class="explanation"><strong>Less surface = less to defend.</strong> Every endpoint you don't need is an endpoint that can't be attacked. This is called the principle of minimisation.</div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;">
+      <button onclick="gradeQuiz()" style="background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;color:#0b1020;font-weight:700;padding:14px 32px;border-radius:8px;cursor:pointer;font-size:15px;">Check Answers</button>
+      <div id="score" style="margin-top:16px;font-size:18px;font-weight:600;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section id="resources">
+  <div class="eyebrow">Go Deeper</div>
+  <h2>📚 Free Resources to Continue Learning</h2>
+  <p class="lede">Every link below is hand-picked, free (or has a generous free tier), and is what working professionals actually use.</p>
+
+  <div class="res-grid">
+    <a class="res" href="https://owasp.org/www-project-top-ten/" target="_blank" rel="noopener">
+      <div class="res-cat">Foundations</div>
+      <div class="res-title">OWASP Top 10</div>
+      <div class="res-desc">The canonical list of web app vulnerabilities. Every developer should know it.</div>
+    </a>
+    <a class="res" href="https://attack.mitre.org" target="_blank" rel="noopener">
+      <div class="res-cat">Foundations</div>
+      <div class="res-title">MITRE ATT&amp;CK</div>
+      <div class="res-desc">Catalog of real-world attacker tactics, techniques and procedures (TTPs).</div>
+    </a>
+    <a class="res" href="https://haveibeenpwned.com" target="_blank" rel="noopener">
+      <div class="res-cat">Try Now</div>
+      <div class="res-title">Have I Been Pwned</div>
+      <div class="res-desc">Enter your email and find out if it's in a known data breach. Spoiler: it probably is.</div>
+    </a>
+    <a class="res" href="https://tryhackme.com" target="_blank" rel="noopener">
+      <div class="res-cat">Practice</div>
+      <div class="res-title">TryHackMe</div>
+      <div class="res-desc">Guided, gamified learning paths. Best starting point for absolute beginners.</div>
+    </a>
+    <a class="res" href="https://www.hackthebox.com" target="_blank" rel="noopener">
+      <div class="res-cat">Practice</div>
+      <div class="res-title">Hack The Box</div>
+      <div class="res-desc">Real vulnerable machines to break into. More advanced — the industry's gym.</div>
+    </a>
+    <a class="res" href="https://portswigger.net/web-security" target="_blank" rel="noopener">
+      <div class="res-cat">Practice</div>
+      <div class="res-title">PortSwigger Web Academy</div>
+      <div class="res-desc">Free, world-class web security training from the makers of Burp Suite.</div>
+    </a>
+    <a class="res" href="https://overthewire.org/wargames/bandit/" target="_blank" rel="noopener">
+      <div class="res-cat">Practice</div>
+      <div class="res-title">OverTheWire — Bandit</div>
+      <div class="res-desc">Learn Linux + security via SSH wargames. Level 0 takes 5 minutes.</div>
+    </a>
+    <a class="res" href="https://cve.mitre.org" target="_blank" rel="noopener">
+      <div class="res-cat">Reference</div>
+      <div class="res-title">CVE Database</div>
+      <div class="res-desc">Every known software vulnerability ever, with a unique ID.</div>
+    </a>
+    <a class="res" href="https://nvd.nist.gov" target="_blank" rel="noopener">
+      <div class="res-cat">Reference</div>
+      <div class="res-title">NIST NVD</div>
+      <div class="res-desc">Severity scores (CVSS) for every CVE. Used to prioritise patching.</div>
+    </a>
+    <a class="res" href="https://www.shodan.io" target="_blank" rel="noopener">
+      <div class="res-cat">Tools</div>
+      <div class="res-title">Shodan</div>
+      <div class="res-desc">"Google for internet-connected devices." Sobering and a little terrifying.</div>
+    </a>
+    <a class="res" href="https://hackerone.com" target="_blank" rel="noopener">
+      <div class="res-cat">Earn Money</div>
+      <div class="res-title">HackerOne</div>
+      <div class="res-desc">Bug bounty platform. Top hunters earn ₹1Cr+ per year, fully legit.</div>
+    </a>
+    <a class="res" href="https://www.bugcrowd.com" target="_blank" rel="noopener">
+      <div class="res-cat">Earn Money</div>
+      <div class="res-title">Bugcrowd</div>
+      <div class="res-desc">Another major bounty platform. Lots of beginner-friendly programs.</div>
+    </a>
+    <a class="res" href="https://www.cert-in.org.in" target="_blank" rel="noopener">
+      <div class="res-cat">India 🇮🇳</div>
+      <div class="res-title">CERT-In</div>
+      <div class="res-desc">India's national CERT — incident reporting, advisories, the official voice.</div>
+    </a>
+    <a class="res" href="https://www.youtube.com/@LiveOverflow" target="_blank" rel="noopener">
+      <div class="res-cat">YouTube</div>
+      <div class="res-title">LiveOverflow</div>
+      <div class="res-desc">Deep, well-produced videos on real-world exploitation. Excellent.</div>
+    </a>
+    <a class="res" href="https://www.youtube.com/@_JohnHammond" target="_blank" rel="noopener">
+      <div class="res-cat">YouTube</div>
+      <div class="res-title">John Hammond</div>
+      <div class="res-desc">Daily CTF walkthroughs, malware analysis, career advice.</div>
+    </a>
+    <a class="res" href="https://www.coursera.org/professional-certificates/google-cybersecurity" target="_blank" rel="noopener">
+      <div class="res-cat">Certifications</div>
+      <div class="res-title">Google Cybersecurity Cert</div>
+      <div class="res-desc">Beginner-friendly, recognised, free with Coursera financial aid.</div>
+    </a>
+  </div>
+</section>
+
+<footer>
+  Crafted for engineering students with <span class="heart">♥</span> · Cybersec 101 — Day 1
+  <br>
+  <span style="font-size:12px;opacity:0.6;">Stay curious. Stay paranoid. Stay legal.</span>
+</footer>
+
+<script>
+  // ============ Sandbox detection + link fallback ============
+  (function() {
+    let inIframe = false;
+    try {
+      inIframe = window.self !== window.top;
+    } catch (e) {
+      inIframe = true; // Cross-origin access threw → definitely sandboxed
+    }
+    const banner = document.getElementById('previewBanner');
+    const openLink = document.getElementById('openExternal');
+    if (openLink) openLink.href = window.location.href;
+    if (inIframe && banner) banner.style.display = 'block';
+
+    // Modal helpers
+    const modal = document.getElementById('linkModal');
+    const modalUrl = document.getElementById('linkModalUrl');
+    const modalOpen = document.getElementById('linkModalOpen');
+    const modalCopy = document.getElementById('linkModalCopy');
+    const modalClose = document.getElementById('linkModalClose');
+    const modalToast = document.getElementById('linkModalToast');
+
+    function showModal(url) {
+      modalUrl.textContent = url;
+      modalOpen.href = url;
+      modalToast.style.display = 'none';
+      modal.style.display = 'flex';
+    }
+    function hideModal() { modal.style.display = 'none'; }
+    modalClose.addEventListener('click', hideModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideModal(); });
+
+    modalCopy.addEventListener('click', async () => {
+      const url = modalUrl.textContent;
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        }
+      } catch (e) {}
+      if (!copied) {
+        // Fallback for sandboxed contexts where clipboard API is blocked
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); copied = true; } catch (e) {}
+        document.body.removeChild(ta);
+      }
+      modalToast.textContent = copied ? '✓ Copied to clipboard' : '⚠ Copy blocked — select the URL and copy manually';
+      modalToast.style.background = copied ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)';
+      modalToast.style.color = copied ? '#86efac' : '#fca5a5';
+      modalToast.style.display = 'block';
+    });
+
+    // Intercept ALL external link clicks. Try window.open first;
+    // if blocked (returns null) or throws, show the modal so the URL is at least visible/copyable.
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href]');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+      // Only intercept truly external links
+      let isExternal = false;
+      try {
+        const url = new URL(href, window.location.href);
+        isExternal = url.origin !== window.location.origin;
+      } catch (err) { return; }
+      if (!isExternal) return;
+
+      // In a non-iframe context, let the browser do its normal thing.
+      if (!inIframe) return;
+
+      e.preventDefault();
+      let popup = null;
+      try { popup = window.open(href, '_blank', 'noopener,noreferrer'); } catch (err) {}
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // Popup blocked by sandbox — fall back to modal
+        showModal(a.href);
+      }
+    }, true);
+  })();
+
+  // ============ Brute-force estimator ============
+  const pwdInput = document.getElementById('pwd');
+  const attackerSel = document.getElementById('attacker');
+  const strengthEl = document.getElementById('strength');
+  const barEl = document.getElementById('strengthBar');
+  const timeEl = document.getElementById('cracktime');
+  const noteEl = document.getElementById('cracknote');
+
+  function charsetSize(pwd) {
+    let size = 0;
+    if (/[a-z]/.test(pwd)) size += 26;
+    if (/[A-Z]/.test(pwd)) size += 26;
+    if (/[0-9]/.test(pwd)) size += 10;
+    if (/[^a-zA-Z0-9]/.test(pwd)) size += 33;
+    return size;
+  }
+
+  function humanTime(seconds) {
+    if (seconds < 1) return 'instantly';
+    const units = [
+      ['year', 60*60*24*365],
+      ['day', 60*60*24],
+      ['hour', 60*60],
+      ['minute', 60],
+      ['second', 1]
+    ];
+    for (const [name, secs] of units) {
+      if (seconds >= secs) {
+        const val = seconds / secs;
+        if (val > 1e15) return `${(val/1e9).toExponential(2)} billion ${name}s — heat death of the universe-tier`;
+        if (val > 1e9) return `${(val/1e9).toFixed(1)} billion ${name}s`;
+        if (val > 1e6) return `${(val/1e6).toFixed(1)} million ${name}s`;
+        if (val > 1000) return `${Math.round(val).toLocaleString()} ${name}s`;
+        return `${val.toFixed(val < 10 ? 1 : 0)} ${name}${val !== 1 ? 's' : ''}`;
+      }
+    }
+    return 'instantly';
+  }
+
+  function strength(combinations) {
+    const log = Math.log10(combinations);
+    if (log < 6) return { label: 'Trivially Weak', pct: 10, color: '#ef4444' };
+    if (log < 10) return { label: 'Weak', pct: 30, color: '#f59e0b' };
+    if (log < 14) return { label: 'Decent', pct: 55, color: '#fbbf24' };
+    if (log < 20) return { label: 'Strong', pct: 80, color: '#22c55e' };
+    return { label: 'Excellent', pct: 100, color: '#5eead4' };
+  }
+
+  function update() {
+    const pwd = pwdInput.value;
+    if (!pwd) {
+      strengthEl.textContent = '—';
+      barEl.style.width = '0%';
+      timeEl.textContent = '—';
+      noteEl.textContent = 'Type a password above to see the estimate.';
+      return;
+    }
+    const cs = charsetSize(pwd);
+    const combos = Math.pow(cs, pwd.length);
+    const rate = parseFloat(attackerSel.value);
+    const seconds = combos / (2 * rate); // average case = half the space
+    const s = strength(combos);
+    strengthEl.textContent = s.label;
+    strengthEl.style.color = s.color;
+    barEl.style.width = s.pct + '%';
+    barEl.style.background = s.color;
+    timeEl.textContent = humanTime(seconds);
+    noteEl.textContent = `Charset: ${cs} characters · Length: ${pwd.length} · Combinations: ${combos.toExponential(2)}`;
+  }
+  pwdInput.addEventListener('input', update);
+  attackerSel.addEventListener('change', update);
+
+  // ============ Quiz ============
+  function gradeQuiz() {
+    const questions = document.querySelectorAll('.question');
+    let correct = 0;
+    questions.forEach(q => {
+      const ans = q.dataset.correct;
+      const labels = q.querySelectorAll('label');
+      labels.forEach(l => l.classList.remove('correct', 'wrong'));
+      const sel = q.querySelector('input:checked');
+      if (sel) {
+        const selLabel = sel.closest('label');
+        if (sel.value === ans) {
+          selLabel.classList.add('correct');
+          correct++;
+        } else {
+          selLabel.classList.add('wrong');
+          // also highlight the correct one
+          q.querySelector(`input[value="${ans}"]`).closest('label').classList.add('correct');
+        }
+      } else {
+        // none picked — mark correct
+        q.querySelector(`input[value="${ans}"]`).closest('label').classList.add('correct');
+      }
+      q.querySelector('.explanation').classList.add('show');
+    });
+    const scoreEl = document.getElementById('score');
+    const total = questions.length;
+    let msg;
+    if (correct === total) msg = `🏆 Perfect — ${correct}/${total}. You're ready for Day 2.`;
+    else if (correct >= 3) msg = `👍 Solid — ${correct}/${total}. Review the explanations.`;
+    else msg = `📚 Keep going — ${correct}/${total}. The journey starts here.`;
+    scoreEl.textContent = msg;
+    scoreEl.style.color = correct >= 3 ? 'var(--ok)' : 'var(--warn)';
+  }
+
+  // ============ LAB 1: Phishing Spotter ============
+  const phishRounds = [
+    { url: 'https://accounts.google.com/signin', phish: false, reason: 'Genuine Google sign-in domain. ✓' },
+    { url: 'https://accounts-google.secure-login.com/verify', phish: true, reason: '"accounts-google" is a subdomain trick. Real Google never uses random parent domains like secure-login.com.' },
+    { url: 'https://www.amazon.in/gp/css/order-history', phish: false, reason: 'Real Amazon India. The path looks normal and the domain is correct.' },
+    { url: 'https://www.arnazon-india.com/orders', phish: true, reason: 'Typosquatting — that\'s "arnazon" (r-n looks like m). Classic phishing trick.' },
+    { url: 'https://hdfcbank.com/personal/cards', phish: false, reason: 'Genuine HDFC Bank. Path looks normal.' },
+    { url: 'http://hdfc-bank-secure-portal.ml/login', phish: true, reason: 'Three red flags: no HTTPS, hyphenated subdomains, and free .ml TLD (often abused). Banks NEVER use .ml domains.' },
+    { url: 'https://github.com/login', phish: false, reason: 'Real GitHub login page.' },
+    { url: 'https://github.com.session-auth.io/login', phish: true, reason: 'The real domain is "session-auth.io", not github.com. Read URLs from right to left — the part before the FIRST single slash is the domain.' },
+  ];
+  let phishIdx = 0, phishCorrect = 0;
+
+  function renderPhish() {
+    const el = document.getElementById('phishGame');
+    if (phishIdx >= phishRounds.length) {
+      el.innerHTML = `<div class="phish-card" style="text-align:center;">
+        <h4 style="margin-top:0;">🎉 Round complete!</h4>
+        <p style="font-size:24px;color:var(--accent);font-weight:700;">${phishCorrect}/${phishRounds.length}</p>
+        <p style="color:var(--muted);">${phishCorrect === phishRounds.length ? 'Perfect — your inbox is safe from you.' : phishCorrect >= 5 ? 'Good eye! But pros still get fooled sometimes.' : 'Phishing works because it\'s subtle. Keep practising.'}</p>
+      </div>`;
+      document.getElementById('phishScore').textContent = '';
+      return;
+    }
+    const r = phishRounds[phishIdx];
+    el.innerHTML = `<div class="phish-card">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Round ${phishIdx + 1} of ${phishRounds.length} — would you click this link?</div>
+      <div class="phish-url">${r.url}</div>
+      <div class="phish-actions">
+        <button onclick="phishAnswer(false)" style="background:rgba(34,197,94,0.2);color:#86efac;border:1px solid rgba(34,197,94,0.5);">✓ Looks Legit</button>
+        <button onclick="phishAnswer(true)" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.5);">⚠ Phishing!</button>
+      </div>
+      <div class="verdict" id="phishVerdict"></div>
+    </div>`;
+    document.getElementById('phishScore').textContent = `Score: ${phishCorrect} / ${phishIdx}`;
+  }
+
+  function phishAnswer(saidPhish) {
+    const r = phishRounds[phishIdx];
+    const v = document.getElementById('phishVerdict');
+    const right = saidPhish === r.phish;
+    if (right) phishCorrect++;
+    v.className = `verdict show ${right ? 'right' : 'wrong'}`;
+    v.innerHTML = `${right ? '✅ Correct!' : '❌ Wrong.'} This was <strong>${r.phish ? 'PHISHING' : 'LEGIT'}</strong>. ${r.reason}<br><br><button onclick="nextPhish()" style="background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;color:#0b1020;font-weight:700;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;margin-top:4px;">Next →</button>`;
+  }
+
+  function nextPhish() { phishIdx++; renderPhish(); }
+  function resetPhish() { phishIdx = 0; phishCorrect = 0; renderPhish(); }
+  renderPhish();
+
+  // ============ LAB 2: Hash Avalanche ============
+  // Pure-JS SHA-256 fallback so it works in any context (file://, sandboxed iframe, etc.)
+  function sha256JS(ascii) {
+    function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+    const mathPow = Math.pow;
+    const maxWord = mathPow(2, 32);
+    let result = '';
+    const words = [];
+    // UTF-8 encode
+    ascii = unescape(encodeURIComponent(ascii));
+    const asciiBitLength = ascii.length * 8;
+
+    let hash = sha256JS.h = sha256JS.h || [];
+    const k = sha256JS.k = sha256JS.k || [];
+    let primeCounter = k.length;
+    const isComposite = {};
+    for (let candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (let i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+        hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1/3) * maxWord) | 0;
+      }
+    }
+    hash = hash.slice(0, 8);
+
+    ascii += '\x80';
+    while (ascii.length % 64 - 56) ascii += '\x00';
+    for (let i = 0; i < ascii.length; i++) {
+      const j = ascii.charCodeAt(i);
+      words[i >> 2] |= j << ((3 - i) % 4) * 8;
+    }
+    words[words.length] = ((asciiBitLength / maxWord) | 0);
+    words[words.length] = (asciiBitLength);
+
+    for (let j = 0; j < words.length;) {
+      const w = words.slice(j, j += 16);
+      const oldHash = hash;
+      hash = hash.slice(0, 8);
+      for (let i = 0; i < 64; i++) {
+        const w15 = w[i - 15], w2 = w[i - 2];
+        const a = hash[0], e = hash[4];
+        const temp1 = hash[7]
+          + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+          + ((e & hash[5]) ^ ((~e) & hash[6]))
+          + k[i]
+          + (w[i] = (i < 16) ? w[i] : (
+              w[i - 16]
+              + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+              + w[i - 7]
+              + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+            ) | 0
+          );
+        const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+          + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+        hash = [(temp1 + temp2) | 0].concat(hash);
+        hash[4] = (hash[4] + temp1) | 0;
+      }
+      for (let i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+
+    for (let i = 0; i < 8; i++) {
+      for (let j = 3; j + 1; j--) {
+        const b = (hash[i] >> (j * 8)) & 255;
+        result += ((b < 16) ? '0' : '') + b.toString(16);
+      }
+    }
+    return result;
+  }
+
+  async function sha256(text) {
+    // Try the fast native API first, fall back to pure JS if blocked
+    try {
+      if (window.crypto && window.crypto.subtle && window.isSecureContext !== false) {
+        const buf = new TextEncoder().encode(text);
+        const hash = await window.crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (e) { /* fall through */ }
+    return sha256JS(text);
+  }
+
+  async function updateHashes() {
+    try {
+      const a = document.getElementById('hashA').value;
+      const b = document.getElementById('hashB').value;
+      const [hA, hB] = await Promise.all([sha256(a), sha256(b)]);
+      let outA = '', outB = '', diffCount = 0;
+      for (let i = 0; i < 64; i++) {
+        if (hA[i] !== hB[i]) {
+          outA += `<span class="diff-char">${hA[i]}</span>`;
+          outB += `<span class="diff-char">${hB[i]}</span>`;
+          diffCount++;
+        } else {
+          outA += hA[i];
+          outB += hB[i];
+        }
+      }
+      document.getElementById('hashOutA').innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:4px;">SHA-256(A)</div>${outA}`;
+      document.getElementById('hashOutB').innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:4px;">SHA-256(B) — ${diffCount}/64 hex chars differ (~${Math.round(diffCount/64*100)}%)</div>${outB}`;
+    } catch (e) {
+      document.getElementById('hashOutA').innerHTML = `<span style="color:var(--danger);">Error: ${e.message}</span>`;
+    }
+  }
+  document.getElementById('hashA').addEventListener('input', updateHashes);
+  document.getElementById('hashB').addEventListener('input', updateHashes);
+  updateHashes();
+
+  // ============ LAB 3: SQL Injection ============
+  function trySqlLogin() {
+    const user = document.getElementById('sqlUser').value;
+    const pass = document.getElementById('sqlPass').value;
+    const queryEl = document.getElementById('sqlQuery');
+    const resultEl = document.getElementById('sqlResult');
+
+    // Show the dangerous string-concatenated query
+    const rawQuery = `SELECT * FROM users WHERE username='${user}' AND password='${pass}'`;
+    // Highlight injected payload if present
+    const injected = pass.includes("'") || pass.includes('--') || /\bOR\b/i.test(pass);
+    let display = rawQuery
+      .replace(/SELECT|FROM|WHERE|AND|OR/g, m => `<span class="keyword">${m}</span>`);
+    if (injected) {
+      display = display.replace(pass, `<span class="injected">${pass}</span>`);
+    }
+    queryEl.innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:6px;">VULNERABLE backend query (string concatenation):</div>${display}`;
+
+    // Simulated DB check
+    resultEl.style.display = 'block';
+    const correctPass = 'hunter2';
+    const bypassed = /['"]?\s*OR\s+['"]?1['"]?\s*=\s*['"]?1/i.test(pass) || pass.includes("' --");
+    if (user === 'admin' && pass === correctPass) {
+      resultEl.className = 'output ok';
+      resultEl.innerHTML = '✅ Logged in as admin (correct password).';
+    } else if (bypassed) {
+      resultEl.className = 'output danger';
+      resultEl.innerHTML = `🚨 <strong>BYPASSED!</strong> The condition <code>'1'='1'</code> is always true, so the WHERE clause matches every row — the DB happily returns the first user (often admin) and the app logs you in. <strong>You didn't need a password.</strong>`;
+    } else {
+      resultEl.className = 'output';
+      resultEl.innerHTML = `❌ Login failed. (Hint: try password <code style="color:var(--accent);">' OR '1'='1</code>)`;
+    }
+  }
+
+  // ============ LAB 4: Caesar Cipher ============
+  function caesarShift(text, shift) {
+    return text.replace(/[a-zA-Z]/g, c => {
+      const base = c <= 'Z' ? 65 : 97;
+      return String.fromCharCode((c.charCodeAt(0) - base + shift + 26) % 26 + base);
+    });
+  }
+
+  function caesarEncrypt() {
+    const msg = document.getElementById('caesarMsg').value;
+    const shift = parseInt(document.getElementById('caesarShift').value, 10) || 0;
+    const out = caesarShift(msg, shift);
+    document.getElementById('caesarOut').innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:6px;">Encrypted (shift +${shift}):</div><div style="font-size:16px;color:var(--accent);">${out}</div>`;
+  }
+
+  function caesarDecrypt() {
+    const msg = document.getElementById('caesarMsg').value;
+    const shift = parseInt(document.getElementById('caesarShift').value, 10) || 0;
+    const out = caesarShift(msg, -shift);
+    document.getElementById('caesarOut').innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:6px;">Decrypted (shift -${shift}):</div><div style="font-size:16px;color:var(--accent);">${out}</div>`;
+  }
+
+  function caesarBrute() {
+    const msg = document.getElementById('caesarMsg').value;
+    let html = `<div style="color:var(--muted);font-size:11px;margin-bottom:6px;">All 25 possible decryptions — your eye picks out the real one instantly. This is why Caesar is broken:</div>`;
+    for (let i = 1; i <= 25; i++) {
+      html += `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span style="color:var(--muted);display:inline-block;width:50px;">+${i}</span> ${caesarShift(msg, i)}</div>`;
+    }
+    document.getElementById('caesarOut').innerHTML = html;
+  }
+</script>
+
+</body>
+</html>

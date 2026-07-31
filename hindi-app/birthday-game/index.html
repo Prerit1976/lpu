@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎉 Who Knows Prerit Best?</title>
+<style>
+  :root{
+    --card:#fff; --ink:#2a1a4a; --muted:#7a6b95;
+    --accent:#ff5da2; --accent2:#ffb400; --purple:#6b4bd6; --good:#18b26b; --bad:#e0466a;
+    --shadow:0 18px 45px rgba(20,0,60,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Roboto,system-ui,-apple-system,sans-serif;color:var(--ink);
+    min-height:100vh;padding:16px 14px 60px;display:flex;flex-direction:column;align-items:center;
+    background:linear-gradient(160deg,#2b1055,#7597de,#ff5da2);background-size:200% 200%;
+    background-attachment:fixed;animation:bg 16s ease infinite;
+  }
+  @keyframes bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .wrap{width:100%;max-width:660px}
+  header{text-align:center;color:#fff;margin:4px 0 14px}
+  header h1{font-size:clamp(21px,5.4vw,31px);margin:0;line-height:1.15;text-shadow:0 3px 12px rgba(0,0,0,.4)}
+  header p{margin:4px 0 0;opacity:.9;font-size:14px}
+
+  .card,.screen{background:var(--card);border-radius:22px;box-shadow:var(--shadow);animation:pop .3s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+  .screen{padding:26px 20px;text-align:center}
+  .card{padding:20px}
+  .big{font-size:56px;line-height:1;margin-bottom:2px}
+  h2{font-size:23px;margin:8px 0}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.55;margin:0 0 8px}
+
+  .btn{border:none;border-radius:16px;font-weight:800;cursor:pointer;transition:transform .12s;color:#fff}
+  .btn:active{transform:scale(.97)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-xl{font-size:19px;padding:17px 30px;width:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));
+    box-shadow:0 10px 24px rgba(255,93,162,.4)}
+  .btn-host{background:linear-gradient(90deg,#6b4bd6,#9b6bff)}
+  .btn-go{font-size:17px;padding:15px 26px;background:linear-gradient(90deg,var(--purple),#9b6bff);flex:1}
+  .btn-sm{font-size:14px;padding:11px 16px;background:var(--purple)}
+  .btn-ghost{background:#f0edf9;color:var(--purple)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+
+  input{border:2px solid #e6e0f5;border-radius:14px;padding:14px;font-size:16px;outline:none;width:100%}
+  input:focus{border-color:var(--purple)}
+  label.fld{display:block;text-align:left;font-size:13px;font-weight:700;color:var(--muted);margin:12px 0 4px}
+
+  .banner{background:#fff4e0;border:1px solid #ffd88a;color:#8a5a00;border-radius:14px;padding:10px 12px;font-size:12.5px;margin:0 0 14px;text-align:left}
+  .banner.ok{background:#eafaf1;border-color:#bfe9d2;color:#0f7a4a}
+  details{background:#f6f3ff;border-radius:12px;padding:10px 12px;text-align:left;font-size:13px;margin-top:12px}
+  details summary{cursor:pointer;font-weight:700;color:var(--purple)}
+  details ol{margin:8px 0 0;padding-left:20px;line-height:1.6}
+  code{background:#efeaff;padding:1px 5px;border-radius:5px;font-size:12px}
+
+  .codebox{background:#efeaff;border-radius:16px;padding:14px;margin:0 0 14px;text-align:center}
+  .codebox .k{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+  .codebox .v{font-size:40px;font-weight:900;color:var(--purple);letter-spacing:6px}
+  .pill{display:inline-block;background:#efeaff;color:var(--purple);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:800}
+
+  .plist{list-style:none;padding:0;margin:10px 0 16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .plist li{background:#efeaff;color:var(--purple);font-weight:800;border-radius:20px;padding:8px 14px;font-size:15px;animation:pop .3s ease}
+  .qrwrap{display:flex;justify-content:center;margin:8px 0 12px}
+  .qr{background:#fff;padding:12px;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.14);min-width:120px;min-height:120px;display:flex;align-items:center;justify-content:center}
+  .qr img,.qr canvas{display:block;width:190px;height:190px}
+  .linkbox{background:#f6f3ff;border-radius:10px;padding:9px 11px;font-size:12px;color:var(--purple);word-break:break-all;text-align:center;margin:6px 0}
+  .lbl{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin:12px 0 2px;text-align:center}
+  .divider{border:none;border-top:1px solid #eee;margin:18px 0}
+
+  .meta{display:flex;justify-content:space-between;color:#fff;font-size:13px;opacity:.92;margin-bottom:4px}
+  .meta2{text-align:center;color:var(--purple);font-weight:800;font-size:13px;margin-bottom:6px}
+  .bar{height:9px;background:rgba(255,255,255,.25);border-radius:20px;overflow:hidden;margin:12px 0}
+  .bar>i{display:block;height:100%;width:0;border-radius:20px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s}
+  .qemoji{font-size:44px;text-align:center;line-height:1}
+  .qtext{font-size:clamp(18px,4.6vw,23px);font-weight:800;text-align:center;margin:6px 0 16px}
+
+  .opts{display:grid;gap:11px}
+  .opt{border:2px solid #eee;background:#faf9ff;border-radius:15px;padding:14px 15px;font-size:16px;font-weight:700;color:var(--ink);
+    cursor:pointer;display:flex;align-items:center;gap:11px;text-align:left;transition:.14s}
+  .opt:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .opt:active{transform:scale(.98)}
+  .opt.on{border-color:var(--purple);background:#efeaff}
+  .opt .letter{flex:0 0 30px;height:30px;border-radius:50%;background:#efeaff;display:grid;place-items:center;font-weight:900;color:var(--purple);font-size:14px}
+  .opt.on .letter{background:var(--purple);color:#fff}
+
+  .chip{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;border:2px solid #e9e4f7;
+    background:#fff;border-radius:11px;padding:11px 13px;margin-bottom:7px;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;transition:.12s}
+  .chip:hover{border-color:var(--purple)}
+  .chip.correct{border-color:var(--good);background:#eafaf1}
+  .chip.correct .mk{color:var(--good);font-weight:900}
+  .chip .mk{font-size:12px;color:#c9c1e0;white-space:nowrap}
+  .hq{background:#faf9ff;border:1px solid #eee;border-radius:15px;padding:13px 14px;margin-bottom:11px;text-align:left}
+  .hq h4{margin:0 0 9px;font-size:14.5px}
+
+  .answered{text-align:center;background:#efeaff;color:var(--purple);font-weight:800;border-radius:12px;padding:11px;margin:14px 0 2px}
+  .correctbox{background:#eafaf1;border:1px solid #bfe9d2;color:#0f7a4a;border-radius:12px;padding:11px 13px;font-size:15px;text-align:center;margin-top:6px}
+  .react{background:linear-gradient(90deg,#fff0f7,#fff6df);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;text-align:center;font-weight:800;color:var(--ink);font-size:15.5px;margin-top:10px;animation:bounceIn .5s ease}
+  @keyframes bounceIn{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+  .blist{list-style:none;padding:0;margin:8px 0 0}
+  .brow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:7px;background:#faf9ff;border:1px solid #eee}
+  .brow.ok{background:#eafaf1;border-color:#bfe9d2}
+  .brow.no{background:#fdeef1;border-color:#f3c9d4}
+  .brow .pn{flex:0 0 32%;font-weight:800;font-size:14px;word-break:break-word}
+  .brow .said{flex:1;font-size:13.5px}
+  .brow .mk{flex:0 0 auto;font-size:16px}
+
+  .lb{list-style:none;padding:0;margin:12px 0}
+  .lb li{display:flex;align-items:center;gap:12px;background:#faf9ff;border-radius:14px;padding:12px 14px;margin-bottom:9px;border:2px solid #eee}
+  .lb li.win{border-color:var(--accent2);background:linear-gradient(90deg,#fff6df,#ffeafa)}
+  .lb li.me{outline:2px dashed var(--purple)}
+  .lb .rank{font-size:22px;flex:0 0 34px;text-align:center}
+  .lb .pn{flex:1;font-weight:800;font-size:16px}
+  .lb .sc{font-weight:900;font-size:18px;color:var(--purple)}
+  .lb .sc small{color:var(--muted);font-size:12px}
+  .empty{color:var(--muted);font-size:14px;padding:16px 0;text-align:center}
+
+  footer{color:#fff;opacity:.7;font-size:12px;text-align:center;margin-top:20px}
+  .confetti{position:fixed;width:10px;height:14px;top:-20px;z-index:99;pointer-events:none;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎉 Who Knows Prerit Best?</h1>
+    <p>The live family guessing game</p>
+  </header>
+  <div id="app"></div>
+  <footer>Made with ❤️ for a very special birthday</footer>
+</div>
+
+<script>
+/* ============================================================
+   1) STAR NAME + ROOM
+   ============================================================ */
+const STAR = "Prerit";
+const ROOM = "PRERIT";   // fixed room -> the two links below are always stable
+
+/* ============================================================
+   2) ONE-LINE SETUP so family can play on their OWN phones:
+      Create a free Firebase Realtime Database (Test mode) and paste
+      ONLY its URL here (looks like the example).  That's it.
+        console.firebase.google.com -> Add project ->
+        Build -> Realtime Database -> Create -> Test mode ->
+        copy the URL shown at the top of the database.
+   ============================================================ */
+const DB_URL = "PASTE_DATABASE_URL";   // e.g. https://prerit-bday-default-rtdb.firebaseio.com
+const USE_CLOUD = /^https:\/\/.+/.test(DB_URL) && DB_URL.indexOf("PASTE")===-1;
+
+/* ============================================================
+   3) QUESTIONS (situational + funny, with reactions on reveal)
+   ============================================================ */
+const QUESTIONS = [
+  {e:"🍜", q:"What's his ultimate comfort food?", o:["A mountain of cheese 🧀","Chinese — noodles for the soul 🍜","Whatever's in the fridge 🧊","He forgets to eat, honestly 😅"], real:1, react:"Noodle royalty confirmed 🍜👑"},
+  {e:"💼", q:"Where did the legend's career begin?", o:["His own lemonade stand 🍋","Undercover for MI6 🕵️","Mindteck — day-one hero 💼","Hogwarts, part-time 🪄"], real:2, react:"From Mindteck to unstoppable 🚀"},
+  {e:"🌆", q:"Which city made him?", o:["Right next to the fridge 🧊","Patna — the OG roots 🌆","On a rollercoaster, mid-loop 🎢","A galaxy far, far away 🌌"], real:1, react:"Patna pride! 🙌"},
+  {e:"🎬", q:"The movie that hits him in the feels, every time?", o:["One he sleeps through 💤","The singing-plumber one 🍄","The Pursuit of Happyness 🎬","His own home videos 📼"], real:2, react:"Grab the tissues 🥹"},
+  {e:"☕", q:"Do NOT talk to him before…", o:["…his first coffee ☕","…his morning chai 🍵","…his green tea 🌿","…his glass of water 💧"], real:0, react:"Coffee first, world later ☕"},
+  {e:"🏖️", q:"Surprise free trip tomorrow — he sprints to…", o:["A loud party city 🎉","The sacred couch 🛋️","A quiet beach hideaway 🏖️","Anywhere with a buffet 🍽️"], real:2, react:"Sand, sun, sorted 🏖️🤫"},
+  {e:"📺", q:"Which show owns his evenings?", o:["The 6 AM news, full volume 📺","Game of Thrones 🐉","Cooking shows he'll never cook from 👨‍🍳","Whatever the family allows 😅"], real:1, react:"Winter came, he stayed ❄️🐉"},
+  {e:"💬", q:"His signature catchphrase?", o:["\"Beta, in my time…\" 👴","\"Sab Maya Hai\" 🧘","\"Two minutes!\" (never is) ⏱️","\"Who ate my snack?\" 🍫"], real:1, react:"Sab Maya Hai, indeed 🧘✨"},
+  {e:"👦", q:"As a kid, he dreamed of becoming a…", o:["Superhero (still trying) 🦸","World-famous Chef 👨‍🍳","Cricket legend 🏏","Boss of literally everything 👔"], real:1, react:"Chef's kiss to that dream 👨‍🍳💋"},
+  {e:"🍽️", q:"At a buffet, his true form is…", o:["One polite plate 🍽️","'Just a taste' … six times 😏","Straight to dessert first 🍰","Round three, zero shame 🍛"], real:3, react:"Buffet boss detected 🍛😎"},
+  {e:"📵", q:"The Wi-Fi dies for a whole day. His reaction?", o:["Total meltdown 😱","\"Finally, some peace!\" 🧘","Reboots the router 47 times 🔌","Naps it off 😴"], real:1, react:"Zen master mode unlocked 🧘"},
+  {e:"⏰", q:"It's 5 AM. Where is he?", o:["Snoozing his 5 alarms 😴","Already up, coffee in hand ☕","Awake by pure willpower 💪","Nobody knows 🤔"], real:2, react:"No alarm needed — a legend 💪"},
+  {e:"🕺", q:"Dragged onto the dance floor, he…", o:["Vanishes to the snack table 🍿","Busts out THE signature move 🕺","'One song' becomes ten 🎶","Films everyone else instead 🎥"], real:1, react:"The move nobody forgets 🕺🔥"},
+  {e:"🤝", q:"His favourite part of any workday?", o:["The free office snacks 🍪","Meeting new people 🤝","Hitting 'Reply All' with flair 📧","Naps disguised as 'deep thinking' 😴"], real:1, react:"A people-person, always 🤝"},
+  {e:"🦸", q:"One superpower, forever. He picks…", o:["Teleport to the buffet 🌀","Reading minds 🧠","Ending any meeting instantly ⏹️","Infinite-advice mode 🗣️"], real:1, react:"He already reads yours 🧠👀"},
+];
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+const app=document.getElementById('app');
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function genId(){return 'p_'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
+
+let role=null, code=ROOM, room={}, hostView='lobby', myId=null, myName='', confettiShown=false;
+let lastSnap=null, poller=null;
+
+/* ---------- persistence so a refresh does NOT reset anything ---------- */
+function saveMe(){ try{localStorage.setItem('bstar_me',JSON.stringify({code:code,id:myId,name:myName}));}catch(e){} }
+function loadMe(){ try{return JSON.parse(localStorage.getItem('bstar_me')||'null');}catch(e){return null;} }
+function clearMe(){ try{localStorage.removeItem('bstar_me');}catch(e){} }
+
+/* ============================================================
+   BACKEND — cloud (Firebase REST, URL only) OR local demo
+   ============================================================ */
+function base(path){ return DB_URL+'/rooms/'+code+(path?('/'+path):'')+'.json'; }
+async function cGet(){ const r=await fetch(base(''),{cache:'no-store'}); return await r.json(); }
+function cPut(path,val){ return fetch(base(path),{method:'PUT',body:JSON.stringify(val)}); }
+function cPatch(obj){ return fetch(base(''),{method:'PATCH',body:JSON.stringify(obj)}); }
+
+function emit(json){ const s=JSON.stringify(json||{}); if(s!==lastSnap){ lastSnap=s; onRoom(json||{}); } }
+function refresh(){ if(USE_CLOUD) cGet().then(emit).catch(()=>{}); }
+
+const Net = {
+  start(){
+    if(USE_CLOUD){ if(poller)clearInterval(poller); refresh(); poller=setInterval(refresh,1200); }
+    else { L._c=code; L._cb=emit; L._ch=new BroadcastChannel('bstar:'+code);
+      L._ch.onmessage=()=>emit(L._read()); window.addEventListener('storage',e=>{if(e.key===L._key())emit(L._read());}); emit(L._read()); }
+  },
+  async ensureRoom(){
+    const defA={};QUESTIONS.forEach((q,i)=>defA[i]=q.real);
+    if(USE_CLOUD){ const j=await cGet(); if(!j||!j.answers) await cPatch({answers:defA,phase:'lobby',current:-1}); refresh(); }
+    else { const r=L._read(); if(!r.answers){r.answers=defA;r.players={};r.phase='lobby';r.current=-1;L._write(r);} }
+  },
+  update(obj){ if(USE_CLOUD){cPatch(obj).then(refresh);} else {const r=L._read();Object.assign(r,obj);L._write(r);} },
+  setAnswer(q,idx){ if(USE_CLOUD){cPut('answers/'+q,idx).then(refresh);} else {const r=L._read();r.answers=r.answers||{};r.answers[q]=idx;L._write(r);} },
+  join(name){ const id=genId(); if(USE_CLOUD){cPut('players/'+id,{name:name,answers:{}}).then(refresh);} else {const r=L._read();r.players=r.players||{};r.players[id]={name:name,answers:{}};L._write(r);} return id; },
+  answer(id,q,idx){ if(USE_CLOUD){cPut('players/'+id+'/answers/'+q,idx).then(refresh);} else {const r=L._read();if(r.players&&r.players[id]){r.players[id].answers=r.players[id].answers||{};r.players[id].answers[q]=idx;L._write(r);}} },
+  async clearAnswers(){ if(USE_CLOUD){const j=await cGet();const u={};Object.keys((j&&j.players)||{}).forEach(id=>u['players/'+id+'/answers']=null); if(Object.keys(u).length) await cPatch(u); refresh();} else {const r=L._read();Object.keys(r.players||{}).forEach(id=>r.players[id].answers={});L._write(r);} }
+};
+const L={ _c:null,_cb:null,_ch:null,
+  _key(){return 'bstar:'+this._c;},
+  _read(){try{return JSON.parse(localStorage.getItem(this._key()))||{};}catch(e){return{};}},
+  _write(o){localStorage.setItem(this._key(),JSON.stringify(o));try{this._ch&&this._ch.postMessage(1);}catch(e){} if(this._cb)this._cb(o);}
+};
+
+function onRoom(snap){ room=snap||{}; render(); }
+function render(){ role==='host'?renderHost():role==='player'?renderPlayer():renderLanding(); }
+
+/* ============================================================
+   LINKS
+   ============================================================ */
+function baseUrl(){ return location.origin+location.pathname; }
+function hostLink(){ return baseUrl()+'#host'; }
+function joinLink(){ return baseUrl()+'#join='+ROOM; }
+
+/* ============================================================
+   scoring / shared HTML
+   ============================================================ */
+function correctIdx(qi){ return (room.answers&&room.answers[qi]!=null)?room.answers[qi]:QUESTIONS[qi].real; }
+function scoreOf(p){ let s=0; QUESTIONS.forEach((Q,i)=>{ if((p.answers||{})[i]===correctIdx(i))s++; }); return s; }
+const REACTS=["Locked in! 🔒","Bold choice! 😏","Ooh, confident! 💪","Interesting… 🤔","Nice one! ✨","Gut call! 🎯","Feeling lucky? 🍀","Final answer? 👀"];
+function winnerLine(){
+  const players=room.players?Object.entries(room.players):[];
+  if(!players.length) return '';
+  const ranked=players.map(([id,p])=>({name:p.name,score:scoreOf(p)})).sort((a,b)=>b.score-a.score);
+  const top=ranked[0].score;
+  if(top===0) return 'Nobody nailed it — he stays a mystery! 🕵️';
+  const winners=ranked.filter(r=>r.score===top).map(w=>w.name);
+  const pct=Math.round(top/QUESTIONS.length*100);
+  const tag=pct>=80?'knows him inside out! 🧠🏆':pct>=50?'knows him pretty well! 🎉':'gave it a solid shot! 😄';
+  return winners.length>1 ? winners.join(' & ')+' tie — both '+tag : '👑 '+winners[0]+' '+tag;
+}
+function breakdownHTML(qi){
+  const Q=QUESTIONS[qi], correct=correctIdx(qi);
+  const players=room.players?Object.values(room.players):[];
+  const rows=players.map(p=>{
+    const a=(p.answers||{})[qi]; const answered=a!=null; const right=a===correct;
+    const said=answered?Q.o[a]:'—';
+    const mk=!answered?'<span style="color:var(--muted);font-size:12px">no answer</span>':(right?'<span style="color:var(--good);font-weight:900">✓</span>':'<span style="color:var(--bad);font-weight:900">✗</span>');
+    return `<li class="brow ${!answered?'':(right?'ok':'no')}"><span class="pn">${esc(p.name)}</span><span class="said">${esc(said)}</span><span class="mk">${mk}</span></li>`;
+  }).join('');
+  return `<div class="card">
+    <div class="meta2">Question ${qi+1} of ${QUESTIONS.length}</div>
+    <div class="qemoji">${Q.e}</div><p class="qtext">${esc(Q.q)}</p>
+    <div class="correctbox">✅ Correct: <b>${esc(Q.o[correct])}</b></div>
+    ${Q.react?`<div class="react">${esc(Q.react)}</div>`:''}
+    <p class="sub" style="text-align:left;margin:14px 0 4px"><b>What everyone said:</b></p>
+    <ul class="blist">${rows||'<li class="empty">No players</li>'}</ul></div>`;
+}
+function leaderboardHTML(highlightId){
+  const players=room.players?Object.entries(room.players):[];
+  const ranked=players.map(([id,p])=>({id,name:p.name,score:scoreOf(p)})).sort((a,b)=>b.score-a.score);
+  const top=ranked.length?ranked[0].score:0, medals=['🥇','🥈','🥉'];
+  return `<ul class="lb">${ranked.map((r,i)=>`
+    <li class="${r.score===top&&top>0?'win':''} ${r.id===highlightId?'me':''}">
+      <span class="rank">${medals[i]||('#'+(i+1))}</span>
+      <span class="pn">${esc(r.name)}${r.score===top&&top>0?' 👑':''}${r.id===highlightId?' (you)':''}</span>
+      <span class="sc">${r.score}<small>/${QUESTIONS.length}</small></span></li>`).join('')||'<li class="empty">No players yet</li>'}</ul>`;
+}
+
+/* ============================================================
+   LANDING
+   ============================================================ */
+function renderLanding(){
+  app.innerHTML=`
+    <div class="screen">
+      <div class="big">🎂</div>
+      <h2>Let's Play Live!</h2>
+      <p class="sub">One host runs the game. Everyone joins on their own phone, answers each question together, then we reveal who really knows ${esc(STAR)}.</p>
+      ${USE_CLOUD
+        ? '<div class="banner ok">✅ <b>Connected.</b> Family can join on their own phones.</div>'
+        : '<div class="banner">🧪 <b>Demo mode.</b> This only syncs between tabs on <b>this</b> device. To play across phones, add your Firebase Database URL (one line near the top of the file) and re-host.</div>'}
+      <button class="btn btn-xl btn-host" onclick="enterHost()">🎛️ Master Control (Host)</button>
+      <div style="height:10px"></div>
+      <button class="btn btn-xl" onclick="enterJoin('')">🙋 Join &amp; Play</button>
+    </div>`;
+}
+
+/* ============================================================
+   HOST — Master Control
+   ============================================================ */
+async function enterHost(){
+  role='host'; code=ROOM; hostView='lobby'; confettiShown=false;
+  if(location.hash!=='#host') location.hash='#host';
+  await Net.ensureRoom();
+  Net.start();
+  renderHost();
+}
+window.enterHost=enterHost;
+
+function renderHost(){
+  const phase=room.phase||'lobby';
+  if(phase==='lobby'){ hostView==='setans'?hostSetAnswers():hostLobby(); }
+  else if(phase==='playing') hostPlaying();
+  else if(phase==='review') hostReview();
+  else if(phase==='results') hostResults();
+}
+
+function hostLobby(){
+  const players=room.players?Object.values(room.players):[];
+  app.innerHTML=`<div class="card">
+    <h2 style="text-align:center;margin-top:2px">📲 Invite everyone</h2>
+    <p class="sub" style="text-align:center">Point a phone camera at the code, or tap Share. People just enter their name.</p>
+    <div class="qrwrap"><div id="qrbox" class="qr"></div></div>
+    <div class="row" style="margin-top:0">
+      <button class="btn btn-sm" onclick="shareLink()">📤 Share join link</button>
+      <button class="btn btn-ghost" onclick="copyText(joinLink())">🔗 Copy</button>
+    </div>
+    <div class="lbl">JOIN LINK (send to family)</div>
+    <div class="linkbox">${esc(joinLink())}</div>
+    <div class="lbl">🎛️ MASTER CONTROL LINK (only you — bookmark it)</div>
+    <div class="linkbox">${esc(hostLink())}</div>
+    <div class="row" style="margin-top:6px"><button class="btn btn-ghost" onclick="copyText(hostLink())">🔗 Copy master link</button></div>
+    <hr class="divider">
+    <h2 style="text-align:center">👥 Joined (${players.length})</h2>
+    ${players.length?`<ul class="plist">${players.map(p=>`<li>${esc(p.name)}</li>`).join('')}</ul>`:'<p class="empty">Waiting for people to join…</p>'}
+    <button class="btn btn-xl" ${players.length?'':'disabled'} onclick="hostStart()">▶ START GAME</button>
+    <div class="row">
+      <button class="btn btn-ghost" onclick="hostView='setans';renderHost()">⚙️ Set correct answers</button>
+      <button class="btn btn-ghost" onclick="leave()">⬅ Exit</button>
+    </div>
+    ${USE_CLOUD?'':firebaseHelp()}
+  </div>`;
+  paintQR('qrbox',joinLink());
+}
+
+function hostSetAnswers(){
+  const body=QUESTIONS.map((Q,qi)=>{
+    const cur=correctIdx(qi);
+    const chips=Q.o.map((t,i)=>`<button class="chip ${i===cur?'correct':''}" onclick="setAns(${qi},${i})"><span>${esc(t)}</span><span class="mk">${i===cur?'✔ correct':'set'}</span></button>`).join('');
+    return `<div class="hq"><h4>${Q.e} ${esc(Q.q)}</h4>${chips}</div>`;
+  }).join('');
+  app.innerHTML=`<div class="card">
+    <h2 style="text-align:center">⚙️ Correct Answers</h2>
+    <p class="sub">Defaults are pre-filled. Tap to change any — these decide the scores. Players never see this.</p>
+    ${body}
+    <div class="row"><button class="btn btn-go" onclick="hostView='lobby';renderHost()">✓ Done</button></div>
+  </div>`;
+}
+
+function hostPlaying(){
+  const cur=room.current||0, Q=QUESTIONS[cur], correct=correctIdx(cur);
+  const players=room.players?Object.values(room.players):[];
+  const answered=players.filter(p=>(p.answers||{})[cur]!=null).length;
+  const last=cur===QUESTIONS.length-1;
+  const chips=Q.o.map((t,i)=>`<button class="chip ${i===correct?'correct':''}" onclick="setAns(${cur},${i})"><span>${esc(t)}</span><span class="mk">${i===correct?'✔ correct':'mark'}</span></button>`).join('');
+  app.innerHTML=`<div class="card">
+    <div class="meta2">Question ${cur+1} of ${QUESTIONS.length} · 🎛️ Master Control</div>
+    <div class="qemoji">${Q.e}</div><p class="qtext">${esc(Q.q)}</p>
+    <p class="sub" style="text-align:left">Green ✔ is the correct answer (hidden from players). Tap to change it.</p>
+    <div>${chips}</div>
+    <div class="answered">🙋 ${answered} of ${players.length} answered</div>
+    <div class="row">
+      ${cur>0?'<button class="btn btn-ghost" onclick="hostPrev()">◀ Prev</button>':''}
+      <button class="btn btn-go" onclick="hostNext()">${last?'See what everyone said ➜':'Next question ➜'}</button>
+    </div>
+  </div>`;
+}
+
+function hostReview(){
+  const cur=room.current||0, last=cur===QUESTIONS.length-1;
+  app.innerHTML=breakdownHTML(cur)+`<div class="row">
+    ${cur>0?'<button class="btn btn-ghost" onclick="hostPrev()">◀ Prev</button>':''}
+    <button class="btn btn-go" onclick="hostNext()">${last?'🏆 Final Results ➜':'Next ➜'}</button></div>`;
+}
+
+function hostResults(){
+  app.innerHTML=`<div class="card"><div class="big" style="text-align:center">🏆</div>
+    <h2 style="text-align:center">Who Knows Him Best!</h2>
+    <p class="react" style="margin-top:0">${esc(winnerLine())}</p>${leaderboardHTML(null)}
+    <div class="row"><button class="btn btn-ghost" onclick="hostNewGame()">🔁 New game</button>
+      <button class="btn btn-ghost" onclick="leave()">⬅ Exit</button></div></div>`;
+  if(!confettiShown){confettiShown=true;burstConfetti(true);}
+}
+
+window.hostStart=function(){ Net.update({phase:'playing',current:0}); };
+window.hostNext=function(){
+  const cur=room.current||0;
+  if(room.phase==='playing'){ cur<QUESTIONS.length-1?Net.update({current:cur+1}):Net.update({phase:'review',current:0}); }
+  else if(room.phase==='review'){ cur<QUESTIONS.length-1?Net.update({current:cur+1}):Net.update({phase:'results'}); }
+};
+window.hostPrev=function(){ const cur=room.current||0; if(cur>0)Net.update({current:cur-1}); };
+window.hostNewGame=async function(){ confettiShown=false; await Net.clearAnswers(); Net.update({phase:'lobby',current:-1}); };
+window.setAns=function(q,i){ Net.setAnswer(q,i); };
+window.copyText=function(t){ if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>toast('Copied!'),()=>prompt('Copy:',t)); else prompt('Copy:',t); };
+window.shareLink=async function(){
+  const url=joinLink();
+  if(navigator.share){ try{ await navigator.share({title:'Who Knows Prerit Best? 🎂',text:'Join the birthday game — just enter your name!',url:url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  copyText(url+'\n(Just open it and enter your name)');
+};
+
+function firebaseHelp(){
+  return `<details><summary>📱 Make it work on everyone's phones (1 line)</summary>
+    <ol><li><code>console.firebase.google.com</code> → <b>Add project</b> (free).</li>
+    <li><b>Build → Realtime Database → Create → Test mode</b>.</li>
+    <li>Copy the <b>database URL</b> at the top (e.g. <code>https://…firebaseio.com</code>).</li>
+    <li>Paste it as <code>DB_URL</code> near the top of this file &amp; re-host.</li></ol></details>`;
+}
+
+/* QR (loads a tiny lib once; falls back to link if offline) */
+let qrLoaded=false,qrLoading=null,qrCache={};
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
+function ensureQR(){ if(qrLoaded) return Promise.resolve(true); if(qrLoading) return qrLoading;
+  qrLoading=loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js").then(()=>{qrLoaded=true;return true;}).catch(()=>false);
+  return qrLoading; }
+function paintQR(id,text){
+  const el=document.getElementById(id); if(!el) return;
+  if(qrCache[text]){ el.innerHTML=qrCache[text]; return; }
+  ensureQR().then(ok=>{ const e2=document.getElementById(id); if(!e2) return;
+    if(!ok||typeof QRCode==='undefined'){ e2.innerHTML='<div class="sub" style="font-size:12px;margin:0">📶 Scan needs internet — use Share/Copy.</div>'; return; }
+    e2.innerHTML=''; try{ new QRCode(e2,{text:text,width:190,height:190,correctLevel:QRCode.CorrectLevel.M});
+      setTimeout(()=>{ const cur=document.getElementById(id); if(cur&&cur.querySelector('img,canvas')) qrCache[text]=cur.innerHTML; },60);
+    }catch(e){ e2.innerHTML='<div class="sub" style="font-size:12px;margin:0">Use Share/Copy to invite.</div>'; }
+  });
+}
+
+/* ============================================================
+   PLAYER
+   ============================================================ */
+function enterJoin(prefill){ role='player'; code=(prefill||ROOM); renderJoin(code); }
+window.enterJoin=enterJoin;
+
+function renderJoin(prefill){
+  const fromLink=!!prefill;
+  app.innerHTML=`<div class="screen">
+    <div class="big">${fromLink?'🎉':'🙋'}</div>
+    <h2>${fromLink?'You\'re Invited!':'Join the Game'}</h2>
+    <p class="sub">${fromLink?'Just enter your name to log in and play.':'Enter your name to join Prerit\'s game.'}</p>
+    <input id="jcode" type="hidden" value="${esc(prefill||ROOM)}">
+    <label class="fld">Your name</label>
+    <input id="jname" placeholder="Type your name…" maxlength="16" onkeydown="if(event.key==='Enter')doJoin()">
+    <div class="row"><button class="btn btn-go" onclick="doJoin()">Log in &amp; Play ➜</button>
+      <button class="btn btn-ghost" onclick="leave()">⬅ Back</button></div>
+    ${USE_CLOUD?'':'<div class="banner" style="margin-top:14px">🧪 Demo mode — only works on this device until the host adds the database URL.</div>'}
+  </div>`;
+  const n=document.getElementById('jname'); if(n)n.focus();
+}
+window.doJoin=async function(){
+  const n=(document.getElementById('jname').value||'').trim();
+  if(!n) return toast('Enter your name');
+  role='player'; code=(document.getElementById('jcode').value||ROOM).toUpperCase(); myName=n; confettiShown=false;
+  if(USE_CLOUD){ /* nothing to load */ }
+  myId=Net.join(n); saveMe(); Net.start(); render();
+};
+
+function renderPlayer(){
+  const phase=room.phase||'lobby';
+  if(phase==='playing') return playerPlaying();
+  if(phase==='review') return playerReview();
+  if(phase==='results') return playerResults();
+  return playerLobby();
+}
+function playerLobby(){
+  const players=room.players?Object.values(room.players):[];
+  app.innerHTML=`<div class="screen"><div class="big">🎈</div><h2>You're in, ${esc(myName)}!</h2>
+    <p class="sub">Hang tight — the host will start the game any moment now.</p>
+    <span class="pill">👥 ${players.length} joined</span>
+    <div class="row"><button class="btn btn-ghost" onclick="leave()">⬅ Leave</button></div></div>`;
+}
+function playerPlaying(){
+  const cur=room.current||0, Q=QUESTIONS[cur];
+  const mine=(room.players&&room.players[myId]&&room.players[myId].answers)?room.players[myId].answers[cur]:null;
+  const opts=Q.o.map((t,i)=>`<button class="opt ${mine===i?'on':''}" onclick="pAns(${i})"><span class="letter">${String.fromCharCode(65+i)}</span><span>${esc(t)}</span></button>`).join('');
+  app.innerHTML=`<div class="meta"><span>Question ${cur+1} of ${QUESTIONS.length}</span><span>${mine!=null?'✅ locked · tap to change':'🔒 pick one'}</span></div>
+    <div class="bar"><i style="width:${Math.round(cur/QUESTIONS.length*100)}%"></i></div>
+    <div class="card"><div class="qemoji">${Q.e}</div><p class="qtext">${esc(Q.q)}</p><div class="opts">${opts}</div>
+    ${mine!=null?'<p class="sub" style="text-align:center;margin-top:12px">Saved! Waiting for the host to move on… ⏳</p>':''}</div>`;
+}
+window.pAns=function(i){ const prev=(room.players&&room.players[myId]&&room.players[myId].answers)?room.players[myId].answers[room.current||0]:null; Net.answer(myId,room.current||0,i); if(prev!==i) toast(REACTS[Math.floor(Math.random()*REACTS.length)]); };
+function playerReview(){
+  app.innerHTML=breakdownHTML(room.current||0)+`<p class="sub" style="text-align:center;margin-top:12px">👀 Follow along with the host…</p>
+    <div class="row"><button class="btn btn-ghost" onclick="leave()">⬅ Leave</button></div>`;
+}
+function playerResults(){
+  app.innerHTML=`<div class="card"><div class="big" style="text-align:center">🏆</div>
+    <h2 style="text-align:center">Final Results!</h2>
+    <p class="react" style="margin-top:0">${esc(winnerLine())}</p>${leaderboardHTML(myId)}
+    <div class="row"><button class="btn btn-ghost" onclick="leave()">⬅ Leave</button></div></div>`;
+  if(!confettiShown){confettiShown=true;burstConfetti(true);}
+}
+
+/* ============================================================
+   HELPERS + ROUTING
+   ============================================================ */
+function leave(){ role=null; myId=null; myName=''; hostView='lobby'; confettiShown=false; if(poller){clearInterval(poller);poller=null;} lastSnap=null; clearMe(); location.hash=''; renderLanding(); }
+window.leave=leave;
+function toast(msg){ const t=document.createElement('div'); t.textContent=msg;
+  t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2a1a4a;color:#fff;padding:11px 18px;border-radius:14px;font-weight:700;font-size:14px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3)';
+  document.body.appendChild(t); setTimeout(()=>t.remove(),1600); }
+function burstConfetti(big){
+  const colors=['#ff5da2','#ffb400','#6b4bd6','#18b26b','#7597de','#ff8ec7'];
+  for(let i=0;i<(big?80:36);i++){ const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    document.body.appendChild(c);
+    c.animate([{transform:'translateY(0) rotate(0)',opacity:1},{transform:`translateY(${innerHeight+80}px) rotate(${540+Math.random()*360}deg)`,opacity:.9}],
+      {duration:1500+Math.random()*1500,easing:'cubic-bezier(.3,.6,.5,1)'}).onfinish=()=>c.remove(); }
+}
+
+function boot(){
+  const h=location.hash||'';
+  const me=loadMe();
+  if(h.indexOf('#host')===0){ enterHost(); return; }
+  const m=h.match(/#join=?([A-Za-z0-9]{3,10})/);
+  if(m){
+    const c=m[1].toUpperCase();
+    if(me && me.code===c && me.id){ role='player'; code=c; myId=me.id; myName=me.name||'Player'; Net.start(); render(); return; }
+    enterJoin(c); return;
+  }
+  // resume a mid-game player even without the hash (e.g. refreshed on plain URL)
+  if(me && me.id){ role='player'; code=me.code||ROOM; myId=me.id; myName=me.name||'Player'; Net.start(); render(); return; }
+  renderLanding();
+}
+window.addEventListener('hashchange',()=>{ if(!role) boot(); });
+boot();
+</script>
+</body>
+</html>

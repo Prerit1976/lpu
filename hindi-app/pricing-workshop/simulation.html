@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Simulation Console · Pricing Workshop</title>
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  body{ background:radial-gradient(1200px 700px at 50% -10%,#20265f,transparent 60%),linear-gradient(180deg,#0b0f28,#0b0f28); color:#e8eaff; }
+  .topbar{ background:rgba(11,15,40,.7); border-color:rgba(255,255,255,.08); }
+  .brand,.crumb,.brand .dot{ color:#fff; }
+  .crumb{ color:#aeb4e6; }
+  .panel{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:20px; padding:22px; box-shadow:var(--shadow-lg); }
+  .panel.solid{ background:#141a44; }
+  h1,h2,h3{ color:#fff; }
+  .sub{ color:#aeb4e6; }
+  .teamrow{ display:grid; grid-template-columns:1.4fr .9fr auto; gap:12px; align-items:center;
+            background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .teamrow input{ background:#0c1030; color:#fff; border-color:rgba(255,255,255,.15); }
+  .price-in{ font-family:var(--mono); font-size:1.15rem; font-weight:800; text-align:right; }
+  .swatch{ width:16px;height:16px;border-radius:5px;display:inline-block;vertical-align:-2px;margin-right:8px; }
+  .lb-row{ display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; margin-bottom:12px;
+           transition:transform .6s cubic-bezier(.2,.8,.2,1); }
+  .lb-bar{ height:38px; border-radius:10px; position:relative; min-width:6px; transition:width .8s cubic-bezier(.2,.8,.2,1);
+           display:flex; align-items:center; padding:0 12px; font-weight:800; color:#06122b; overflow:hidden; white-space:nowrap; }
+  .rank{ font-family:var(--mono); font-size:1.4rem; font-weight:800; text-align:center; color:#aeb4e6; }
+  .rank.g{ color:var(--gold);}
+  .shock{ background:linear-gradient(135deg,#3a1350,#5b1d2e); border:1px solid rgba(255,180,120,.4);
+          border-radius:16px; padding:16px 20px; margin-bottom:16px; }
+  .shock .em{ font-size:2rem; }
+  .miniStat{ background:rgba(255,255,255,.05); border-radius:12px; padding:10px 14px; text-align:center; }
+  .miniStat .v{ font-family:var(--mono); font-weight:800; font-size:1.3rem; color:#fff; }
+  .miniStat .l{ font-size:.7rem; color:#aeb4e6; text-transform:uppercase; letter-spacing:.06em; }
+  table.tbl th,table.tbl td{ border-color:rgba(255,255,255,.1); color:#e8eaff; }
+  table.tbl th{ color:#aeb4e6; }
+  .theme-card{ cursor:pointer; border:2px solid rgba(255,255,255,.1); border-radius:18px; padding:20px; background:rgba(255,255,255,.04); transition:.15s; }
+  .theme-card:hover{ border-color:var(--indigo-2); transform:translateY(-3px); }
+  .theme-card.sel{ border-color:var(--gold); background:rgba(251,191,36,.08); }
+  .hintbar{ display:flex; gap:18px; flex-wrap:wrap; font-size:.85rem; color:#aeb4e6; }
+  .hintbar b{ color:#fff; font-family:var(--mono); }
+  .podium{ display:flex; align-items:flex-end; gap:16px; justify-content:center; }
+  .pod{ border-radius:14px 14px 0 0; width:150px; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:14px; color:#06122b; font-weight:800; }
+  .num-btn{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#fff; width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:1.2rem; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html" style="text-decoration:none"><span class="dot">₹</span> Pricing Simulation</a>
+  <span class="crumb" id="crumb">Setup</span>
+  <span class="sep"></span>
+  <button class="btn ghost" style="color:#aeb4e6" onclick="Sim.reset()">↺ New game</button>
+</div>
+
+<div class="wrap" style="padding-top:26px;padding-bottom:60px" id="app"></div>
+
+<script src="assets/app.js"></script>
+<script>
+/* =====================================================================
+   PRICING SIMULATION ENGINE  (facilitator console, projector-ready)
+   ===================================================================== */
+var THEMES = {
+  phone: {
+    key:'phone', label:'Smartphone Brand Wars', emoji:'📱',
+    product:'flagship smartphone', unit:'phones',
+    story:'Each team runs a smartphone brand launching this year’s flagship. Same market, same customers — the only weapon is your price. Read your rivals, protect your margin, win the market.',
+    unitCost:24000, refPrice:40000, marketSize:1000,
+    sensitivity:2.2, marketElasticity:1.1, minP:24000, maxP:70000, step:1000,
+    costLabel:'Cost to make each phone'
+  },
+  coffee: {
+    key:'coffee', label:'Coffee Chain Showdown', emoji:'☕',
+    product:'signature coffee', unit:'cups',
+    story:'Each team runs a rival café chain in the same city. Students walk in every day — price your signature cup to pull the crowd without pouring your profit down the drain.',
+    unitCost:70, refPrice:200, marketSize:5000,
+    sensitivity:2.0, marketElasticity:1.4, minP:70, maxP:400, step:5,
+    costLabel:'Cost to make each cup'
+  }
+};
+
+var COLORS = ['#fbbf24','#38bdf8','#f472b6','#34d399','#a78bfa','#fb923c','#22d3ee','#f87171','#c4b5fd','#4ade80','#e879f9','#60a5fa'];
+
+/* Market-shock deck. Modifiers are applied to the theme baseline for that round only. */
+var SHOCKS = [
+  { id:'war',    emoji:'📉', title:'Price War Breaks Out',
+    desc:'A budget rival floods the market. Customers turn ruthlessly price-driven this round.',
+    lesson:'When customers get price-sensitive, the cheapest credible option grabs share — but only survives if its margin holds.',
+    mod:{ sensitivity:+1.4 } },
+  { id:'inflation', emoji:'💸', title:'Cost Inflation',
+    desc:'Raw materials and wages jump. Your cost per unit rises 18% this round.',
+    lesson:'Rising costs squeeze margin. Teams that don’t pass some cost to price quietly lose profit even if they sell a lot.',
+    mod:{ costMul:1.18 } },
+  { id:'festival', emoji:'🎉', title:'Festival Demand Surge',
+    desc:'A festival hits — 45% more buyers enter the market this round.',
+    lesson:'When the pie grows, volume strategies shine. Holding a fair price to capture the surge often beats greed.',
+    mod:{ sizeMul:1.45 } },
+  { id:'premium', emoji:'💎', title:'Premium Trend',
+    desc:'A viral trend makes buyers crave premium. They’ll pay more for the brand that feels top-tier.',
+    lesson:'Value-based pricing wins here — customers reward a confident premium price when they perceive higher value.',
+    mod:{ sensitivity:-0.9, refMul:1.15 } },
+  { id:'supply', emoji:'🚚', title:'Supply Shock',
+    desc:'A supplier fails: cost per unit rises 15% and the market shrinks 20% this round.',
+    lesson:'Costs up + demand down is the hardest squeeze. Disciplined pricing beats panic discounting.',
+    mod:{ costMul:1.15, sizeMul:0.8 } },
+  { id:'recession', emoji:'🪙', title:'Budget Squeeze',
+    desc:'Wallets tighten. Buyers become very price-aware and the market cools 15%.',
+    lesson:'In a downturn, perceived value-for-money rules. Modest, smart discounts protect share better than deep cuts.',
+    mod:{ sensitivity:+0.8, sizeMul:0.85 } }
+];
+
+var Sim = (function(){
+  var S = null;                 // game state
+  var LS = 'pw_sim_v1';
+
+  function save(){ try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){} }
+  function load(){ try{ var r=localStorage.getItem(LS); return r?JSON.parse(r):null; }catch(e){ return null; } }
+
+  function reset(){
+    if(!S){ localStorage.removeItem(LS); render(); return; }
+    confirmModal('This clears the current leaderboard and starts a fresh market.', function(){
+      localStorage.removeItem(LS); S=null; render();
+    }, {title:'Start a new game?', yes:'Yes, new game', no:'Keep playing'});
+  }
+
+  /* ---------- market model for one round ---------- */
+  function resolveRound(prices, shock){
+    var t = THEMES[S.theme];
+    var sensitivity = t.sensitivity + (shock&&shock.mod.sensitivity||0);
+    var refPrice    = t.refPrice   * (shock&&shock.mod.refMul||1);
+    var unitCost    = t.unitCost   * (shock&&shock.mod.costMul||1);
+    var marketSize  = t.marketSize * (shock&&shock.mod.sizeMul||1);
+
+    // total demand shrinks as the market's average price rises above reference
+    var avg = prices.reduce(function(a,b){return a+b;},0)/prices.length;
+    var demandFactor = Math.pow(refPrice/avg, t.marketElasticity);
+    demandFactor = Math.max(0.25, Math.min(1.9, demandFactor));
+    var totalDemand = marketSize * demandFactor;
+
+    // attractiveness: cheaper vs reference = more attractive (logit-style share)
+    var attr = prices.map(function(p){ return Math.pow(refPrice/p, sensitivity); });
+    var sum = attr.reduce(function(a,b){return a+b;},0);
+
+    return prices.map(function(p,i){
+      var share = attr[i]/sum;
+      var units = Math.round(totalDemand*share);
+      var revenue = units*p;
+      var profit = Math.round(units*(p-unitCost));
+      return { price:p, share:share, units:units, revenue:revenue, profit:profit, unitCost:Math.round(unitCost) };
+    });
+  }
+
+  /* ---------- flow ---------- */
+  function startGame(theme, teamNames, rounds){
+    S = { theme:theme, totalRounds:rounds, round:1, phase:'input',
+          teams: teamNames.map(function(n,i){ return { name:n, color:COLORS[i%COLORS.length], cum:0, hist:[] }; }),
+          shock:null, shockLog:[], lastResult:null };
+    save(); render();
+  }
+
+  function drawShockForRound(r){
+    // rounds 1 is clean; then inject shocks on some rounds deterministically-ish
+    if(r===1) return null;
+    // pick a shock not used recently
+    var used = S.shockLog.map(function(s){return s&&s.id;});
+    var pool = SHOCKS.filter(function(s){ return used.indexOf(s.id)===-1; });
+    if(!pool.length) pool = SHOCKS;
+    // deterministic pick based on round so refresh is stable
+    return pool[(r*3+7)%pool.length];
+  }
+
+  function runRound(){
+    var inputs = document.querySelectorAll('.price-in');
+    var prices = [], ok=true;
+    inputs.forEach(function(inp,i){
+      var v = parseFloat(inp.value);
+      var t = THEMES[S.theme];
+      if(isNaN(v)||v<t.minP||v>t.maxP){ ok=false; inp.style.borderColor='var(--red)'; }
+      else { inp.style.borderColor='rgba(255,255,255,.15)'; }
+      prices.push(v);
+    });
+    if(!ok){ toast('Enter a valid price for every team (within the allowed range).'); return; }
+
+    var res = resolveRound(prices, S.shock);
+    res.forEach(function(r,i){ S.teams[i].cum += r.profit; S.teams[i].hist.push(r); });
+    S.lastResult = res;
+    S.shockLog[S.round-1] = S.shock;
+    S.phase='result';
+    save(); render();
+  }
+
+  function nextRound(){
+    if(S.round>=S.totalRounds){ S.phase='final'; save(); render(); return; }
+    S.round++; S.shock = drawShockForRound(S.round); S.phase='input';
+    save(); render();
+  }
+
+  /* ---------- renderers ---------- */
+  function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+  var app = function(){ return document.getElementById('app'); };
+  function crumb(t){ document.getElementById('crumb').textContent=t; }
+
+  function render(){
+    if(!S){ renderSetup(); }
+    else if(S.phase==='input')  renderInput();
+    else if(S.phase==='result') renderResult();
+    else if(S.phase==='final')  renderFinal();
+    // collapse trainer notes immediately (before paint) so nothing flashes on the projector
+    if(window.collapseTrainers) window.collapseTrainers(document.getElementById('app'));
+  }
+
+  /* ---- SETUP ---- */
+  function renderSetup(){
+    crumb('Setup');
+    var chosen = 'phone';
+    var a = app(); a.innerHTML='';
+    var wrap = el('<div class="reveal in"></div>');
+    wrap.innerHTML =
+      '<div class="panel"><span class="kicker" style="color:var(--gold)">Facilitator setup · 2 minutes</span>'+
+      '<h1 style="margin-top:6px">Set up the market</h1>'+
+      '<p class="sub">Pick a scenario, tell the console how many teams are playing, and how many rounds you have time for. You can run this entirely from this one screen on the projector.</p>'+
+      '<h3 class="mt2">1 · Choose your scenario</h3>'+
+      '<div class="grid g2 mt1" id="themes"></div>'+
+      '<div class="grid g2 mt3">'+
+        '<div><label class="fld" style="color:#fff">2 · How many teams?</label>'+
+          '<div class="row"><button class="num-btn" onclick="Sim._teams(-1)">–</button>'+
+          '<input id="nteams" type="number" value="8" min="2" max="12" style="max-width:90px;text-align:center" oninput="Sim._names()">'+
+          '<button class="num-btn" onclick="Sim._teams(1)">+</button><span class="sub">2–12 teams</span></div></div>'+
+        '<div><label class="fld" style="color:#fff">3 · How many rounds?</label>'+
+          '<div class="row"><button class="num-btn" onclick="Sim._rounds(-1)">–</button>'+
+          '<input id="nrounds" type="number" value="6" min="3" max="10" style="max-width:90px;text-align:center">'+
+          '<button class="num-btn" onclick="Sim._rounds(1)">+</button><span class="sub">~10 min each · 6 fits 90 min</span></div></div>'+
+      '</div>'+
+      '<h3 class="mt3">4 · Team names <span class="sub" style="font-weight:400">(optional — edit or leave as is)</span></h3>'+
+      '<div class="grid g4 mt1" id="names"></div>'+
+      '<div class="trainer" style="background:rgba(245,158,11,.12);border-color:var(--amber)"><span class="lbl">🎤 Trainer says</span>'+
+        '“You are no longer students — you are the CEO of a company. Every round you set one number: your price. That single number decides how many customers you win and how much profit you keep. The market is ruthless and your rivals are in this room.”</div>'+
+      '<button class="btn amber big block mt2" onclick="Sim._start()">Launch the market →</button>'+
+      '</div>';
+    a.appendChild(wrap);
+
+    var tc = document.getElementById('themes');
+    Object.keys(THEMES).forEach(function(k){
+      var t=THEMES[k];
+      var c=el('<div class="theme-card'+(k===chosen?' sel':'')+'" data-k="'+k+'"></div>');
+      c.innerHTML='<div style="font-size:2rem">'+t.emoji+'</div><h3 style="margin:.3em 0 .1em">'+t.label+'</h3>'+
+        '<p class="sub small" style="margin-bottom:10px">'+t.story+'</p>'+
+        '<div class="hintbar"><span>Sells: <b>'+t.product+'</b></span><span>'+t.costLabel+': <b>'+inr(t.unitCost)+'</b></span><span>Typical price: <b>'+inr(t.refPrice)+'</b></span></div>';
+      c.onclick=function(){ document.querySelectorAll('.theme-card').forEach(function(x){x.classList.remove('sel');}); c.classList.add('sel'); Sim._theme=k; };
+      tc.appendChild(c);
+    });
+    Sim._theme='phone';
+    Sim._names();
+  }
+
+  return {
+    reset:reset, runRound:runRound, nextRound:nextRound, render:render, load:load,
+    boot:function(){ var r=load(); if(r){ S=r; } render(); },
+    _theme:'phone',
+    _teams:function(d){ var i=document.getElementById('nteams'); i.value=Math.max(2,Math.min(12,(+i.value||8)+d)); this._names(); },
+    _rounds:function(d){ var i=document.getElementById('nrounds'); i.value=Math.max(3,Math.min(10,(+i.value||6)+d)); },
+    _names:function(){
+      var n=Math.max(2,Math.min(12,+document.getElementById('nteams').value||8));
+      var box=document.getElementById('names'); if(!box) return;
+      var cur={}; box.querySelectorAll('input').forEach(function(inp,i){ cur[i]=inp.value; });
+      var defaults=['Nova','Apex','Zenith','Orbit','Titan','Vertex','Pulse','Halo','Vega','Lumen','Forge','Ember'];
+      box.innerHTML='';
+      for(var i=0;i<n;i++){
+        var d=el('<input type="text">'); d.value=cur[i]||('Team '+defaults[i]); box.appendChild(d);
+      }
+    },
+    _start:function(){
+      var names=[]; document.querySelectorAll('#names input').forEach(function(inp){ names.push(inp.value.trim()||'Team'); });
+      var rounds=Math.max(3,Math.min(10,+document.getElementById('nrounds').value||6));
+      startGame(this._theme, names, rounds);
+    }
+  };
+
+  /* ---- INPUT PHASE ---- */
+  function renderInput(){
+    crumb('Round '+S.round+' of '+S.totalRounds+' · Set prices');
+    var t=THEMES[S.theme]; var a=app(); a.innerHTML='';
+    var shock=S.shock;
+    var costNow = Math.round(t.unitCost*(shock&&shock.mod.costMul||1));
+
+    var head =
+      '<div class="row between"><div><span class="kicker" style="color:var(--gold)">'+t.emoji+' '+t.label+'</span>'+
+      '<h1 style="margin:4px 0">Round '+S.round+' · Set your price</h1></div>'+
+      '<div class="row">'+ roundDots() +'</div></div>';
+
+    var shockHtml = shock ?
+      '<div class="shock"><div class="row"><div class="em">'+shock.emoji+'</div><div><b style="font-size:1.15rem">'+shock.title+'</b>'+
+      '<div class="sub" style="color:#ffd9b8">'+shock.desc+'</div></div></div></div>' :
+      '<div class="panel" style="background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.3);margin-bottom:16px"><b>🟢 Calm market.</b> <span class="sub">A normal trading round — establish your position before the shocks begin.</span></div>';
+
+    var hint =
+      '<div class="panel" style="margin-bottom:16px"><div class="hintbar" style="font-size:.95rem">'+
+      '<span>'+t.costLabel+' this round: <b>'+inr(costNow)+'</b></span>'+
+      '<span>Typical market price: <b>'+inr(t.refPrice)+'</b></span>'+
+      '<span>Allowed range: <b>'+inr(t.minP)+' – '+inr(t.maxP)+'</b></span>'+
+      '<span>Sell below cost = <b style="color:#f87171">you lose money</b></span></div></div>';
+
+    var rows='';
+    S.teams.forEach(function(tm,i){
+      var last = tm.hist.length? inr(tm.hist[tm.hist.length-1].price) : '—';
+      var suggested = tm.hist.length? tm.hist[tm.hist.length-1].price : t.refPrice;
+      rows+='<div class="teamrow"><div><span class="swatch" style="background:'+tm.color+'"></span><b>'+tm.name+'</b>'+
+        '<div class="sub small">Last price: '+last+' · Total profit: '+inr(tm.cum)+'</div></div>'+
+        '<input class="price-in" type="number" step="'+t.step+'" value="'+suggested+'" min="'+t.minP+'" max="'+t.maxP+'">'+
+        '<span class="sub small">per '+t.unit.replace(/s$/,'')+'</span></div>';
+    });
+
+    var a2 = el('<div class="reveal in"></div>');
+    a2.innerHTML = head + shockHtml + hint +
+      '<div class="panel"><div class="row between mb1"><h3 style="margin:0">Enter each team’s price</h3>'+
+      '<span class="sub small">Teams decide privately, then call out their price →</span></div>'+ rows +
+      '<button class="btn amber big block mt2" onclick="Sim.runRound()">▶ Run the market for Round '+S.round+'</button></div>'+
+      '<div class="trainer" style="background:rgba(245,158,11,.12);border-color:var(--amber)"><span class="lbl">🎤 Trainer says</span>'+
+      (shock? 'Read the shock aloud and pause: “How does this change your move?” Give teams 60–90 seconds to decide, then collect prices fast to keep energy high.' :
+              'Give teams 60 seconds to lock a price. Don’t explain the math yet — let them feel it. Collect prices one by one and type them in.')+'</div>';
+    a.appendChild(a2);
+  }
+
+  function roundDots(){
+    var s='';
+    for(var i=1;i<=S.totalRounds;i++){
+      var on = i<S.round, cur=i===S.round;
+      s+='<span style="width:12px;height:12px;border-radius:50%;display:inline-block;margin-left:6px;background:'+
+         (cur?'var(--gold)':on?'#34d399':'rgba(255,255,255,.18)')+'"></span>';
+    }
+    return '<span class="sub small">Round </span>'+s;
+  }
+
+  /* ---- RESULT PHASE ---- */
+  function renderResult(){
+    crumb('Round '+S.round+' · Results');
+    var t=THEMES[S.theme]; var res=S.lastResult; var a=app(); a.innerHTML='';
+
+    // rank teams by this-round profit for callouts
+    var order = S.teams.map(function(tm,i){ return {i:i,tm:tm,r:res[i]}; });
+    var byProfit = order.slice().sort(function(x,y){ return y.r.profit-x.r.profit; });
+    var winner=byProfit[0], loser=byProfit[byProfit.length-1];
+
+    // leaderboard by cumulative
+    var board = S.teams.map(function(tm,i){ return {tm:tm,i:i}; }).sort(function(x,y){ return y.tm.cum-x.tm.cum; });
+    var maxCum = Math.max(1, board[0].tm.cum);
+
+    var totUnits=res.reduce(function(a,b){return a+b.units;},0);
+    var totProfit=res.reduce(function(a,b){return a+b.profit;},0);
+
+    var rowsTbl = order
+      .sort(function(x,y){return y.r.profit-x.r.profit;})
+      .map(function(o){
+        return '<tr><td><span class="swatch" style="background:'+o.tm.color+'"></span>'+o.tm.name+'</td>'+
+          '<td class="mono">'+inr(o.r.price)+'</td>'+
+          '<td>'+pct(o.r.share*100)+'</td>'+
+          '<td>'+num(o.r.units)+'</td>'+
+          '<td class="mono">'+inr(o.r.revenue)+'</td>'+
+          '<td class="mono '+(o.r.profit>=0?'pos':'neg')+'">'+inr(o.r.profit)+'</td>'+
+          '<td class="mono"><b>'+inr(o.tm.cum)+'</b></td></tr>';
+      }).join('');
+
+    var lb = board.map(function(b,idx){
+      var w = Math.max(3, (b.tm.cum/maxCum)*100);
+      var medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':(idx+1);
+      return '<div class="lb-row"><div class="rank'+(idx===0?' g':'')+'">'+medal+'</div>'+
+        '<div class="lb-bar" style="width:'+w+'%;background:'+b.tm.color+'">'+b.tm.name+'</div>'+
+        '<div class="mono" style="font-weight:800;color:#fff">'+inr(b.tm.cum)+'</div></div>';
+    }).join('');
+
+    var shockLesson = S.shock ? '<div class="panel" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.35)"><b>'+S.shock.emoji+' Lesson from this shock:</b> <span class="sub">'+S.shock.lesson+'</span></div>' : '';
+
+    var last = S.round>=S.totalRounds;
+    var a2=el('<div class="reveal in"></div>');
+    a2.innerHTML =
+      '<div class="row between"><h1 style="margin:0">Round '+S.round+' results</h1><div class="row">'+roundDots()+'</div></div>'+
+      '<div class="grid g4 mt2">'+
+        '<div class="miniStat"><div class="v">'+inr(winner.r.price)+'</div><div class="l">🏆 '+winner.tm.name+' — best profit</div></div>'+
+        '<div class="miniStat"><div class="v">'+inr(winner.r.profit)+'</div><div class="l">Round profit (winner)</div></div>'+
+        '<div class="miniStat"><div class="v">'+num(totUnits)+'</div><div class="l">Total '+t.unit+' sold</div></div>'+
+        '<div class="miniStat"><div class="v">'+inr(loser.r.price)+'</div><div class="l">😓 '+loser.tm.name+' — lowest profit</div></div>'+
+      '</div>'+
+      '<div class="grid g2 mt3" style="align-items:start">'+
+        '<div class="panel"><h3>🏁 Live leaderboard <span class="sub small">(total profit)</span></h3>'+lb+'</div>'+
+        '<div class="panel solid"><h3>Round '+S.round+' scorecard</h3>'+
+          '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Team</th><th>Price</th><th>Share</th><th>'+t.unit+'</th><th>Revenue</th><th>Profit</th><th>Total</th></tr></thead><tbody>'+rowsTbl+'</tbody></table></div></div>'+
+      '</div>'+
+      '<div class="mt2">'+shockLesson+'</div>'+
+      '<div class="trainer" style="background:rgba(245,158,11,.12);border-color:var(--amber)"><span class="lbl">🎤 Trainer says</span>'+
+        'Point at the leaderboard: “'+winner.tm.name+' made '+inr(winner.r.profit)+' at '+inr(winner.r.price)+', while '+loser.tm.name+' priced '+(loser.r.price<winner.r.price?'lower and still made less':'higher and lost the crowd')+'. Why?” Let the room debate for 30 seconds before moving on.</div>'+
+      '<div class="row mt2">'+
+        (last? '<button class="btn amber big" onclick="Sim.nextRound()">See final results 🏆</button>'
+             : '<button class="btn amber big" onclick="Sim.nextRound()">Next round → Round '+(S.round+1)+'</button>')+
+      '</div>';
+    a.appendChild(a2);
+    animateBars();
+  }
+
+  function animateBars(){
+    var bars=document.querySelectorAll('.lb-bar');
+    bars.forEach(function(b){ var w=b.style.width; b.style.width='0%'; requestAnimationFrame(function(){ setTimeout(function(){ b.style.width=w; },40); }); });
+  }
+
+  /* ---- FINAL ---- */
+  function renderFinal(){
+    crumb('Final results');
+    var t=THEMES[S.theme]; var a=app(); a.innerHTML='';
+    var board=S.teams.map(function(tm){return tm;}).sort(function(x,y){return y.cum-x.cum;});
+    var top3=board.slice(0,3);
+    var heights=[150,120,100], podOrder=[1,0,2]; // silver, gold, bronze visual order
+
+    var podium='<div class="podium">';
+    [1,0,2].forEach(function(k){
+      var tm=top3[k]; if(!tm) return;
+      var h=[120,160,100][k===0?1:(k===1?0:2)];
+      var medal=k===0?'🥇':k===1?'🥈':'🥉';
+      podium+='<div style="text-align:center"><div style="font-size:2rem">'+medal+'</div>'+
+        '<div class="pod" style="height:'+([160,120,100][k])+'px;background:'+tm.color+'"><div>'+tm.name+'</div>'+
+        '<div class="mono" style="font-size:1.1rem">'+inr(tm.cum)+'</div></div></div>';
+    });
+    podium+='</div>';
+
+    var rows=board.map(function(tm,idx){
+      var avgP=Math.round(tm.hist.reduce(function(a,b){return a+b.price;},0)/tm.hist.length);
+      var units=tm.hist.reduce(function(a,b){return a+b.units;},0);
+      return '<tr><td>'+(idx+1)+'</td><td><span class="swatch" style="background:'+tm.color+'"></span>'+tm.name+'</td>'+
+        '<td class="mono">'+inr(avgP)+'</td><td>'+num(units)+'</td><td class="mono'+(tm.cum>=0?' pos':' neg')+'"><b>'+inr(tm.cum)+'</b></td></tr>';
+    }).join('');
+
+    var a2=el('<div class="reveal in"></div>');
+    a2.innerHTML=
+      '<div class="center"><span class="kicker" style="color:var(--gold)">'+t.emoji+' '+t.label+' · Game over</span>'+
+      '<h1 style="font-size:clamp(2rem,5vw,3.2rem)">🏆 '+board[0].name+' wins the market!</h1>'+
+      '<p class="sub">'+S.totalRounds+' rounds · total profit crowns the champion</p></div>'+
+      '<div class="panel mt2" style="background:transparent;border:none">'+podium+'</div>'+
+      '<div class="panel solid mt3"><h3>Final standings</h3><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>#</th><th>Company</th><th>Avg price</th><th>Total '+t.unit+'</th><th>Total profit</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+      '<div class="trainer mt2" style="background:rgba(245,158,11,.12);border-color:var(--amber)"><span class="lbl">🎤 Trainer says</span>'+
+        'Ask the winner: “What was your strategy?” Then ask a mid-table team what they’d change. This is the bridge into the debrief — the game just gave everyone a story to learn from.</div>'+
+      '<div class="row mt2"><a class="btn amber big" href="debrief.html">Go to Debrief &amp; AI Pricing →</a>'+
+      '<button class="btn secondary big" onclick="Sim.reset()">Run another game</button></div>';
+    a.appendChild(a2);
+  }
+
+})();
+
+// boot: resume saved game or fresh setup
+(function(){
+  Sim.boot();
+  makeTimer(10);
+})();
+</script>
+</body>
+</html>
