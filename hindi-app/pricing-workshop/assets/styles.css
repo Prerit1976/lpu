@@ -69,11 +69,14 @@ img{ max-width:100%; }
 }
 .brand{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; }
 .brand .dot{
-  width:30px;height:30px;border-radius:9px;
-  background:linear-gradient(135deg,var(--indigo),var(--violet));
-  display:grid;place-items:center;color:#fff;font-size:1rem;
-  box-shadow:0 6px 16px rgba(79,70,229,.4);
+  width:34px;height:34px;border-radius:9px;
+  background:#0f131c url("poorit-mark.png") center/cover no-repeat;
+  display:grid;place-items:center;color:transparent;font-size:0;
+  box-shadow:0 4px 12px rgba(0,0,0,.35); flex:0 0 auto;
 }
+/* full brand lockup (hero / certificate) */
+.logo-lockup{ display:inline-block; border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); line-height:0; }
+.logo-lockup img{ display:block; width:100%; height:auto; }
 .topbar .sep{ flex:1; }
 .crumb{ font-size:.8rem; color:var(--muted); font-weight:600; }
 
