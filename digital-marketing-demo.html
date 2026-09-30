@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Low-Ticket vs High-Ticket — Digital Marketing Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0f1a;
+    --bg2:#111726;
+    --ink:#f4f6fb;
+    --muted:#9aa6be;
+    --line:rgba(255,255,255,.10);
+    --card:rgba(255,255,255,.04);
+    --card2:rgba(255,255,255,.06);
+    --low:#34d399;      /* spice / low ticket - green */
+    --low-dim:rgba(52,211,153,.14);
+    --high:#f4b942;     /* elevator / high ticket - gold */
+    --high-dim:rgba(244,185,66,.14);
+    --accent:#7c9cff;
+    --shadow:0 24px 60px rgba(0,0,0,.45);
+    --font:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --display:'Sora','Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:var(--font);
+    background:radial-gradient(1200px 700px at 15% -10%, #1a2338 0%, transparent 55%),
+               radial-gradient(1000px 700px at 110% 20%, #1c1630 0%, transparent 50%),
+               var(--bg);
+    color:var(--ink);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- deck shell ---------- */
+  .deck{position:fixed;inset:0}
+  .slide{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:clamp(24px,5vw,84px);
+    opacity:0;visibility:hidden;transform:translateY(14px) scale(.995);
+    transition:opacity .5s ease, transform .5s ease, visibility .5s;
+    overflow:hidden;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none;z-index:2}
+  .slide-inner{width:100%;max-width:1120px;margin:0 auto;position:relative;z-index:2}
+
+  /* backdrops */
+  .slide.low::after,.slide.high::after{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  }
+  .slide.low::after{background:radial-gradient(700px 500px at 88% 15%, var(--low-dim), transparent 60%)}
+  .slide.high::after{background:radial-gradient(700px 500px at 88% 15%, var(--high-dim), transparent 60%)}
+
+  /* ---------- typography ---------- */
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:18px;
+  }
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .low .kicker .dot{background:var(--low)} .high .kicker .dot{background:var(--high)}
+  .low .kicker{color:var(--low)} .high .kicker{color:var(--high)}
+  h1{font-family:var(--display);font-weight:800;line-height:1.03;letter-spacing:-.02em;
+     font-size:clamp(34px,6vw,72px);margin:0 0 20px}
+  h2{font-family:var(--display);font-weight:700;letter-spacing:-.01em;
+     font-size:clamp(26px,4vw,46px);margin:0 0 8px;line-height:1.08}
+  .lead{font-size:clamp(16px,1.9vw,22px);color:var(--muted);max-width:760px;line-height:1.5}
+  .hl-low{color:var(--low)} .hl-high{color:var(--high)}
+
+  /* ---------- title slide ---------- */
+  .title-wrap{text-align:center}
+  .price-swap{font-family:var(--display);font-weight:800;letter-spacing:-.02em;
+     font-size:clamp(38px,7.2vw,86px);line-height:1.02;margin:6px 0 26px}
+  .title-tags{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .tag{font-size:13px;font-weight:600;color:var(--muted);border:1px solid var(--line);
+       background:var(--card);padding:8px 14px;border-radius:999px}
+  .byline{margin-top:34px;font-size:15px;color:var(--muted)}
+  .byline b{color:var(--ink)}
+
+  /* ---------- generic cards ---------- */
+  .grid{display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+  .card h3{margin:0 0 6px;font-size:16px;font-family:var(--display);font-weight:700}
+  .card p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.5}
+  .muted{color:var(--muted)}
+
+  /* ---------- trainer ---------- */
+  .trainer{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center}
+  .avatar{width:132px;height:132px;border-radius:24px;display:grid;place-items:center;
+    font-family:var(--display);font-weight:800;font-size:46px;color:#0b0f1a;
+    background:linear-gradient(135deg,var(--low),var(--high));box-shadow:var(--shadow)}
+  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:6px}
+  .fact{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .fact .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .fact .v{font-size:15px;font-weight:600;margin-top:3px}
+
+  /* ---------- agenda ---------- */
+  .agenda{display:grid;gap:12px}
+  .arow{display:grid;grid-template-columns:54px 1fr auto;gap:18px;align-items:center;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;
+    transition:transform .2s, border-color .2s, background .2s}
+  .arow:hover{transform:translateX(6px);border-color:var(--accent);background:var(--card2)}
+  .arow .n{font-family:var(--display);font-weight:800;font-size:22px;color:var(--accent)}
+  .arow .t{font-weight:600;font-size:17px}
+  .arow .s{color:var(--muted);font-size:14px}
+  .arow .time{font-size:13px;color:var(--muted);white-space:nowrap;
+    border:1px solid var(--line);padding:5px 11px;border-radius:999px}
+
+  /* ---------- price slider (big idea) ---------- */
+  .idea{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+  .slider-box{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 26px}
+  .price-read{font-family:var(--display);font-weight:800;font-size:clamp(40px,6vw,64px);
+     letter-spacing:-.02em;line-height:1;transition:color .3s}
+  .price-sub{color:var(--muted);font-size:14px;margin-top:4px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+    margin:30px 0 6px;background:linear-gradient(90deg,var(--low),var(--high));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;
+    background:#fff;border:4px solid var(--bg);box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:grab}
+  input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;
+    border:4px solid var(--bg);cursor:grab}
+  .scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
+  .readouts{display:grid;gap:12px}
+  .ro{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;
+    display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}
+  .ro .l{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .ro .v{font-family:var(--display);font-weight:700;font-size:18px;text-align:right;transition:color .3s}
+  .verdict{margin-top:14px;font-size:15px;font-weight:600;padding:14px 18px;border-radius:14px;
+    background:var(--card2);border:1px solid var(--line);transition:.3s}
+  .hint-drag{font-size:13px;color:var(--muted);margin-top:14px;display:flex;align-items:center;gap:8px}
+  .hint-drag .pulse{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.3)}}
+
+  /* ---------- jargon flip cards ---------- */
+  .jargon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .flip{perspective:1000px;height:132px;cursor:pointer}
+  .flip-in{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.2,.7,.2,1);
+    transform-style:preserve-3d}
+  .flip.on .flip-in{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:16px;
+    display:flex;flex-direction:column;justify-content:center;border:1px solid var(--line)}
+  .face.front{background:var(--card2);align-items:center;text-align:center}
+  .face.front .term{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:.02em}
+  .face.front .full{font-size:12px;color:var(--muted);margin-top:6px}
+  .face.back{background:linear-gradient(160deg,rgba(124,156,255,.16),rgba(124,156,255,.05));
+    transform:rotateY(180deg)}
+  .face.back p{margin:0;font-size:13px;line-height:1.42;color:var(--ink)}
+  .jargon-hint{color:var(--muted);font-size:14px;margin-top:16px;text-align:center}
+
+  /* ---------- funnel ---------- */
+  .funnel-slide .lead{margin-bottom:18px}
+  .funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .stage{border:1px solid var(--line);border-radius:16px;padding:18px 16px;cursor:pointer;
+    background:var(--card);transition:transform .2s,border-color .2s,background .2s;position:relative;overflow:hidden}
+  .stage:hover{transform:translateY(-4px)}
+  .low .stage:hover,.low .stage.open{border-color:var(--low);background:var(--low-dim)}
+  .high .stage:hover,.high .stage.open{border-color:var(--high);background:var(--high-dim)}
+  .stage .st{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .low .stage .st{color:var(--low)} .high .stage .st{color:var(--high)}
+  .stage .sh{font-family:var(--display);font-weight:700;font-size:19px;margin:6px 0 2px}
+  .stage .plus{position:absolute;top:14px;right:16px;color:var(--muted);font-size:20px;transition:transform .3s}
+  .stage.open .plus{transform:rotate(45deg)}
+  .stage ul{margin:12px 0 0;padding:0;list-style:none;max-height:0;opacity:0;overflow:hidden;
+    transition:max-height .4s ease,opacity .3s}
+  .stage.open ul{max-height:260px;opacity:1}
+  .stage li{font-size:13px;color:var(--ink);padding:5px 0 5px 16px;position:relative;line-height:1.35}
+  .stage li::before{content:"";position:absolute;left:0;top:11px;width:6px;height:6px;border-radius:50%}
+  .low .stage li::before{background:var(--low)} .high .stage li::before{background:var(--high)}
+  .hero-metric{margin-top:18px;font-size:15px;padding:14px 18px;border-radius:14px;
+    background:var(--card2);border:1px solid var(--line)}
+  .hero-metric b{color:var(--ink)}
+
+  /* ---------- problem cards ---------- */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
+  .col-list{list-style:none;margin:8px 0 0;padding:0}
+  .col-list li{position:relative;padding:8px 0 8px 24px;color:var(--muted);font-size:15px;line-height:1.45}
+  .col-list li::before{content:"";position:absolute;left:2px;top:15px;width:8px;height:8px;border-radius:2px}
+  .low .col-list li::before{background:var(--low)} .high .col-list li::before{background:var(--high)}
+  .col-title{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.04em;
+    text-transform:uppercase}
+  .col-title.warn{color:#ff8f8f}
+
+  /* ---------- compare table ---------- */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0 10px}
+  .cmp th{text-align:left;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    padding:0 18px 6px}
+  .cmp th.h-low{color:var(--low)} .cmp th.h-high{color:var(--high)}
+  .cmp td{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:14px 18px;font-size:14.5px;vertical-align:top}
+  .cmp td:first-child{border-left:1px solid var(--line);border-radius:12px 0 0 12px;
+    font-weight:600;color:var(--muted);width:150px}
+  .cmp td:last-child{border-right:1px solid var(--line);border-radius:0 12px 12px 0}
+  .cmp tr{opacity:0;transform:translateY(8px);transition:.45s}
+  .cmp tr.show{opacity:1;transform:none}
+  .cmp .c-low{color:var(--ink)} .cmp .c-high{color:var(--ink)}
+  .cmp-hint{color:var(--muted);font-size:14px;margin-top:8px}
+
+  /* ---------- poll ---------- */
+  .poll{max-width:820px;margin:0 auto;text-align:center}
+  .poll-opts{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px}
+  .opt{cursor:pointer;border:1.5px solid var(--line);border-radius:20px;padding:26px 22px;text-align:left;
+    background:var(--card);transition:transform .2s,border-color .2s,background .2s;position:relative;overflow:hidden}
+  .opt:hover{transform:translateY(-4px)}
+  .opt[data-side=low]:hover,.opt[data-side=low].pick{border-color:var(--low)}
+  .opt[data-side=high]:hover,.opt[data-side=high].pick{border-color:var(--high)}
+  .opt .oh{font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:6px}
+  .opt .od{color:var(--muted);font-size:14px;line-height:1.45}
+  .opt .fill{position:absolute;left:0;bottom:0;height:100%;width:0;opacity:.16;transition:width .8s cubic-bezier(.2,.7,.2,1);z-index:0}
+  .opt[data-side=low] .fill{background:var(--low)} .opt[data-side=high] .fill{background:var(--high)}
+  .opt .pct{position:relative;z-index:1;font-family:var(--display);font-weight:800;font-size:28px;
+    margin-top:14px;opacity:0;transition:opacity .4s}
+  .poll.voted .opt .pct{opacity:1}
+  .opt>*{position:relative;z-index:1}
+  .poll-note{margin-top:22px;color:var(--muted);font-size:14px;min-height:20px}
+
+  /* ---------- programme chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:26px}
+  .chip{font-weight:600;font-size:15px;padding:12px 20px;border-radius:999px;
+    border:1px solid var(--line);background:var(--card);
+    animation:rise .5s backwards}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- chrome: nav, progress, counter ---------- */
+  .progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--low),var(--high));
+    z-index:50;transition:width .4s ease;width:0}
+  .counter{position:fixed;bottom:22px;right:26px;z-index:40;font-size:13px;color:var(--muted);
+    font-variant-numeric:tabular-nums}
+  .counter b{color:var(--ink)}
+  .nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:40;display:flex;gap:8px;
+    background:rgba(10,14,26,.7);backdrop-filter:blur(8px);border:1px solid var(--line);
+    padding:8px;border-radius:999px}
+  .nav button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card2);
+    color:var(--ink);cursor:pointer;font-size:16px;display:grid;place-items:center;transition:.2s}
+  .nav button:hover{background:var(--accent);border-color:var(--accent);color:#0b0f1a}
+  .dots{position:fixed;left:22px;top:50%;transform:translateY(-50%);z-index:40;display:flex;
+    flex-direction:column;gap:10px}
+  .dots button{width:9px;height:9px;border-radius:50%;border:none;padding:0;cursor:pointer;
+    background:var(--line);transition:.25s}
+  .dots button.on{background:var(--accent);transform:scale(1.5)}
+  .hintbar{position:fixed;bottom:24px;left:26px;z-index:40;font-size:12.5px;color:var(--muted);
+    display:flex;align-items:center;gap:6px;opacity:.85}
+  .key{border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:11px;background:var(--card)}
+
+  @media(max-width:860px){
+    .idea,.trainer,.two-col{grid-template-columns:1fr}
+    .jargon-grid,.funnel{grid-template-columns:repeat(2,1fr)}
+    .poll-opts{grid-template-columns:1fr}
+    .facts{grid-template-columns:1fr}
+    .avatar{width:96px;height:96px;font-size:34px}
+    .dots{display:none}
+    .cmp th{font-size:10px}
+    .cmp td{font-size:13px;padding:10px 12px}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide active">
+    <div class="slide-inner title-wrap">
+      <div class="kicker" style="justify-content:center"><span class="dot"></span> Digital Marketing Masterclass · Live Demo</div>
+      <div class="price-swap">A <span class="hl-low">₹50 spice</span><br/>and a <span class="hl-high">₹15 lakh elevator</span></div>
+      <p class="lead" style="margin:0 auto">How the <b style="color:var(--ink)">price tag</b> quietly rewrites the entire marketing playbook.</p>
+      <div class="title-tags">
+        <span class="tag">🌶️ Low-ticket velocity</span>
+        <span class="tag">🛗 High-ticket trust</span>
+        <span class="tag">🎯 Same goal, opposite game</span>
+      </div>
+      <div class="byline"><b>Abhay Kumar</b> · IIT Roorkee Alumnus · Founder, MarketingAdvisor.in</div>
+    </div>
+  </section>
+
+  <!-- 2 · TRAINER -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Meet your trainer</div>
+      <div class="trainer">
+        <div class="avatar">AK</div>
+        <div>
+          <h2>Abhay Kumar</h2>
+          <p class="lead" style="font-size:17px">10+ years turning ad budgets into revenue — now teaching the craft.</p>
+          <div class="facts">
+            <div class="fact"><div class="l">Education</div><div class="v">IIT Roorkee Alumnus</div></div>
+            <div class="fact"><div class="l">Experience</div><div class="v">10+ yrs in digital marketing</div></div>
+            <div class="fact"><div class="l">Brands worked with</div><div class="v">Byju's · Medlife · Ajmal · Biba · Capillary</div></div>
+            <div class="fact"><div class="l">Founder</div><div class="v">MarketingAdvisor.in</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · AGENDA -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> The next 15 minutes</div>
+      <h2 style="margin-bottom:22px">Here's the plan</h2>
+      <div class="agenda">
+        <div class="arow"><div class="n">01</div><div><div class="t">The big idea</div><div class="s">Price decides the funnel — you'll drive the slider</div></div><div class="time">2 min</div></div>
+        <div class="arow"><div class="n">02</div><div><div class="t">Jargon decoder</div><div class="s">10 terms marketers use daily — flip to reveal</div></div><div class="time">3 min</div></div>
+        <div class="arow"><div class="n">03</div><div><div class="t">Case: Jivabhumi</div><div class="s">Organic spices at ₹50–200</div></div><div class="time">4 min</div></div>
+        <div class="arow"><div class="n">04</div><div><div class="t">Case: Stag Elevators</div><div class="s">Home lifts at ₹10–20 lakh</div></div><div class="time">4 min</div></div>
+        <div class="arow"><div class="n">05</div><div><div class="t">Compare + your vote</div><div class="s">Your turn to decide</div></div><div class="time">2 min</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · BIG IDEA / PRICE SLIDER -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> The big idea · drag it yourself</div>
+      <h2>Move the price. Watch the strategy flip.</h2>
+      <div class="idea" style="margin-top:24px">
+        <div class="slider-box">
+          <div class="price-read" id="priceRead">₹120</div>
+          <div class="price-sub" id="priceTier">Low-ticket · impulse buy</div>
+          <input type="range" id="priceSlider" min="0" max="100" value="18" />
+          <div class="scale"><span>₹50</span><span>₹5,000</span><span>₹2 lakh</span><span>₹20 lakh</span></div>
+          <div class="hint-drag"><span class="pulse"></span> Drag the slider — everything on the right reacts</div>
+        </div>
+        <div class="readouts">
+          <div class="ro"><div class="l">Decision time</div><div class="v" id="roTime">Minutes</div></div>
+          <div class="ro"><div class="l">Who decides</div><div class="v" id="roWho">One person</div></div>
+          <div class="ro"><div class="l">Winning channel</div><div class="v" id="roChan">Instagram Reels</div></div>
+          <div class="ro"><div class="l">Hero metric</div><div class="v" id="roMetric">Repeat rate &amp; LTV</div></div>
+          <div class="verdict" id="verdict">Sell on <b>volume + repeat</b> — win the cart in seconds, then bring them back.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · JARGON DECODER -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Jargon decoder</div>
+      <h2>10 words marketers say every day</h2>
+      <p class="lead" style="font-size:16px;margin:6px 0 20px">Tap a card to reveal what it actually means. Quiz yourself first!</p>
+      <div class="jargon-grid" id="jargonGrid"></div>
+      <div class="jargon-hint">👆 Tap any card to flip</div>
+    </div>
+  </section>
+
+  <!-- 6 · CASE 1 INTRO -->
+  <section class="slide low">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Case 1 · Low ticket</div>
+      <h2>Jivabhumi <span class="muted" style="font-weight:400;font-size:.6em">· organic food, Bengaluru</span></h2>
+      <div class="two-col">
+        <div class="card">
+          <div class="col-title">What they sell</div>
+          <ul class="col-list">
+            <li>Spices ₹50–200 — Lakadong turmeric from ₹120</li>
+            <li>Millets, cold-pressed oils, flours, A2 ghee</li>
+            <li>Next-day delivery in Bangalore, PAN-India shipping</li>
+            <li>COD or online · home delivery or pickup</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="col-title warn">The marketing problem</div>
+          <ul class="col-list">
+            <li>A ₹120 order can't pay for a ₹250 CAC — profit only comes if they come back</li>
+            <li>Offline distribution is tough to set up</li>
+            <li>Building a brand offline needs heavy capital</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · CASE 1 FUNNEL -->
+  <section class="slide low funnel-slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Jivabhumi playbook · volume + repeat</div>
+      <h2>Win fast, then win again</h2>
+      <p class="lead" style="font-size:15px">Click each stage of the funnel to open the tactics.</p>
+      <div class="funnel" id="funnelLow"></div>
+      <div class="hero-metric">🎯 Hero metric: <b>repeat-purchase rate &amp; LTV</b> — not first-order profit. Get 500+ social proofs and distributors come to you.</div>
+    </div>
+  </section>
+
+  <!-- 8 · CASE 2 INTRO -->
+  <section class="slide high">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Case 2 · High ticket</div>
+      <h2>Stag Elevators <span class="muted" style="font-weight:400;font-size:.55em">· home lifts, ₹10–20 lakh</span></h2>
+      <div class="two-col">
+        <div class="card">
+          <div class="col-title">What they sell</div>
+          <ul class="col-list">
+            <li>Home elevators designed in Italy, TÜV SÜD certified</li>
+            <li>No pit, no machine room, single-phase power</li>
+            <li>Villas, duplexes, penthouses — India &amp; UAE</li>
+            <li>Experience Centre in Yelahanka, Bengaluru</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="col-title warn">The marketing problem</div>
+          <ul class="col-list">
+            <li>Behaviour is shifting — individual homes now want lifts</li>
+            <li>Going via builders loses ~30% margin</li>
+            <li>Offline marketing is expensive</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · CASE 2 FUNNEL -->
+  <section class="slide high funnel-slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Stag playbook · trust + leads</div>
+      <h2>Capture intent, earn the trust, close in person</h2>
+      <p class="lead" style="font-size:15px">Click each stage to open the tactics.</p>
+      <div class="funnel" id="funnelHigh"></div>
+      <div class="hero-metric">🎯 Hero metric: <b>cost per qualified lead &amp; lead-to-sale conversion</b>. Sales cycle: 15 days to 4 months.</div>
+    </div>
+  </section>
+
+  <!-- 10 · COMPARE -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="kicker"><span class="dot"></span> Side by side</div>
+      <h2 style="margin-bottom:16px">Same craft, opposite playbook</h2>
+      <table class="cmp" id="cmpTable">
+        <thead><tr><th></th><th class="h-low">🌶️ Jivabhumi</th><th class="h-high">🛗 Stag Elevators</th></tr></thead>
+        <tbody>
+          <tr><td>Price</td><td class="c-low">₹50–200</td><td class="c-high">₹10–20 lakh</td></tr>
+          <tr><td>Decision</td><td class="c-low">Individual, in minutes</td><td class="c-high">Family + architect, in months</td></tr>
+          <tr><td>Goal</td><td class="c-low">Orders, repeat orders &amp; branding</td><td class="c-high">Qualified leads &amp; site visits</td></tr>
+          <tr><td>Key metrics</td><td class="c-low">AOV, CAC, LTV, repeat rate</td><td class="c-high">CPL, MQL→SQL, ROAS</td></tr>
+          <tr><td>Hero channels</td><td class="c-low">Instagram, Shopping ads, Zepto/Blinkit, WhatsApp</td><td class="c-high">Google Search, SEO, YouTube</td></tr>
+          <tr><td>Content</td><td class="c-low">Farmer stories, recipes</td><td class="c-high">Price guides, testimonials</td></tr>
+          <tr><td>Conversion point</td><td class="c-low">Add to cart</td><td class="c-high">Enquiry form → showroom</td></tr>
+        </tbody>
+      </table>
+      <div class="cmp-hint" id="cmpHint">Press → to reveal each row…</div>
+    </div>
+  </section>
+
+  <!-- 11 · YOUR TURN POLL -->
+  <section class="slide">
+    <div class="slide-inner poll" id="poll">
+      <div class="kicker" style="justify-content:center"><span class="dot"></span> Your turn</div>
+      <h2>A ₹2,500 skincare kit.</h2>
+      <p class="lead" style="margin:6px auto 0">Which playbook would <b style="color:var(--ink)">you</b> use? Vote — no wrong answer, defend it.</p>
+      <div class="poll-opts">
+        <div class="opt" data-side="low"><div class="fill"></div>
+          <div class="oh hl-low">🌶️ The Jivabhumi way</div>
+          <div class="od">Volume + repeat. Instagram, influencers, add-to-cart, WhatsApp reorders.</div>
+          <div class="pct" id="pctLow">0%</div>
+        </div>
+        <div class="opt" data-side="high"><div class="fill"></div>
+          <div class="oh hl-high">🛗 The Stag way</div>
+          <div class="od">Trust + leads. Search ads, enquiry form, nurture, close with a consult.</div>
+          <div class="pct" id="pctHigh">0%</div>
+        </div>
+      </div>
+      <div class="poll-note" id="pollNote">Tap an option to cast your vote.</div>
+    </div>
+  </section>
+
+  <!-- 12 · CLOSING -->
+  <section class="slide">
+    <div class="slide-inner title-wrap">
+      <div class="kicker" style="justify-content:center"><span class="dot"></span> The full programme</div>
+      <h1 style="font-size:clamp(30px,5vw,56px)">In 40 hours, we build <span class="hl-low">both</span> playbooks — hands-on.</h1>
+      <div class="chips" id="chips"></div>
+      <div class="byline" style="margin-top:38px">Questions? · <b>Abhay Kumar</b> · MarketingAdvisor.in</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- chrome -->
+<div class="dots" id="dots"></div>
+<div class="nav">
+  <button id="prev" aria-label="Previous">‹</button>
+  <button id="next" aria-label="Next">›</button>
+</div>
+<div class="counter"><b id="cur">1</b> / <span id="total">12</span></div>
+<div class="hintbar"><span class="key">←</span><span class="key">→</span> to navigate · <span class="key">F</span> fullscreen</div>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const total=slides.length;
+  let i=0;
+  const progress=document.getElementById('progress');
+  const cur=document.getElementById('cur');
+  document.getElementById('total').textContent=total;
+
+  // dot nav
+  const dotsWrap=document.getElementById('dots');
+  slides.forEach((_,idx)=>{
+    const b=document.createElement('button');
+    b.addEventListener('click',()=>go(idx));
+    dotsWrap.appendChild(b);
+  });
+  const dots=[...dotsWrap.children];
+
+  function go(n){
+    i=Math.max(0,Math.min(total-1,n));
+    slides.forEach((s,idx)=>s.classList.toggle('active',idx===i));
+    dots.forEach((d,idx)=>d.classList.toggle('on',idx===i));
+    progress.style.width=((i)/(total-1)*100)+'%';
+    cur.textContent=i+1;
+    onEnter(i);
+  }
+  const next=()=>{ if(revealStep()) return; go(i+1); };
+  const prev=()=>go(i-1);
+  document.getElementById('next').addEventListener('click',next);
+  document.getElementById('prev').addEventListener('click',prev);
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'){e.preventDefault();next();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+    else if(e.key===' '){e.preventDefault();next();}
+    else if(e.key==='Home'){go(0);}
+    else if(e.key==='End'){go(total-1);}
+    else if(e.key==='f'||e.key==='F'){toggleFs();}
+  });
+  function toggleFs(){ if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();} else {document.exitFullscreen&&document.exitFullscreen();} }
+
+  // touch swipe
+  let tx=0;
+  document.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-tx;
+    if(Math.abs(dx)>60){ dx<0?next():prev(); }
+  },{passive:true});
+
+  /* ---------- per-slide reveal steps (compare table) ---------- */
+  function revealStep(){
+    const s=slides[i];
+    const rows=s.querySelectorAll('.cmp tbody tr:not(.show)');
+    if(rows.length){ rows[0].classList.add('show');
+      if(rows.length===1) document.getElementById('cmpHint').textContent='That’s the whole story on one screen. →';
+      return true; }
+    return false;
+  }
+  function onEnter(idx){
+    // auto-reveal first compare row for context
+    const s=slides[idx];
+    if(s.querySelector('.cmp')){ const first=s.querySelector('.cmp tr:not(.show)'); /* leave manual */ }
+  }
+
+  /* ---------- price slider ---------- */
+  const slider=document.getElementById('priceSlider');
+  const fmt=n=> n>=100000? '₹'+(n/100000).toFixed(n%100000?1:0)+' lakh' : '₹'+n.toLocaleString('en-IN');
+  function priceFromPct(p){ // exponential 50 -> 2,000,000
+    const min=Math.log(50), max=Math.log(2000000);
+    return Math.round(Math.exp(min+(max-min)*(p/100)));
+  }
+  function updatePrice(){
+    const p=+slider.value, price=priceFromPct(p);
+    document.getElementById('priceRead').textContent=fmt(price);
+    const low = price<5000;
+    const mid = price>=5000 && price<200000;
+    const set=(id,v)=>document.getElementById(id).textContent=v;
+    const read=document.getElementById('priceRead');
+    if(low){
+      read.style.color='var(--low)';
+      set('priceTier','Low-ticket · impulse buy');
+      set('roTime','Minutes'); set('roWho','One person');
+      set('roChan','Instagram Reels'); set('roMetric','Repeat rate & LTV');
+      document.getElementById('verdict').innerHTML='Sell on <b>volume + repeat</b> — win the cart in seconds, then bring them back.';
+    } else if(mid){
+      read.style.color='#c9d4ff';
+      set('priceTier','Mid-ticket · considered buy');
+      set('roTime','Days to weeks'); set('roWho','Couple / household');
+      set('roChan','Search + retargeting'); set('roMetric','ROAS & CPL');
+      document.getElementById('verdict').innerHTML='A blend: <b>capture demand</b> with search, then <b>nurture</b> until they’re ready.';
+    } else {
+      read.style.color='var(--high)';
+      set('priceTier','High-ticket · life decision');
+      set('roTime','Months'); set('roWho','Family + expert');
+      set('roChan','Google Search + sales team'); set('roMetric','Cost per qualified lead');
+      document.getElementById('verdict').innerHTML='Sell on <b>trust + leads</b> — capture the enquiry, then close human-to-human.';
+    }
+  }
+  slider.addEventListener('input',updatePrice);
+  updatePrice();
+
+  /* ---------- jargon cards ---------- */
+  const jargon=[
+    ['TOFU','Top of Funnel','Strangers discovering you — Reels, SEO blogs, awareness ads.'],
+    ['MOFU','Middle of Funnel','Interested people deciding — reviews, comparisons, retargeting.'],
+    ['BOFU','Bottom of Funnel','Ready to buy — offers, bundles, the "buy now" nudge.'],
+    ['CAC','Customer Acquisition Cost','What you spend in marketing to win one paying customer.'],
+    ['LTV','Lifetime Value','Total profit one customer brings across every purchase they make.'],
+    ['AOV','Average Order Value','Average ₹ per order — lift it with bundles & thresholds.'],
+    ['CPL','Cost Per Lead','What you pay for one enquiry — key for high-ticket sales.'],
+    ['ROAS','Return on Ad Spend','Revenue earned for every ₹1 spent on ads. 4x = ₹4 back per ₹1.'],
+    ['MQL→SQL','Marketing → Sales Qualified Lead','A lead warm enough to hand to the sales team to close.'],
+    ['UGC','User-Generated Content','Real customers’ photos, reviews & recipes — cheap, trusted proof.']
+  ];
+  const jg=document.getElementById('jargonGrid');
+  jargon.forEach(([t,f,d])=>{
+    const el=document.createElement('div');
+    el.className='flip';
+    el.innerHTML=`<div class="flip-in">
+        <div class="face front"><div class="term">${t}</div><div class="full">${f}</div></div>
+        <div class="face back"><p>${d}</p></div></div>`;
+    el.addEventListener('click',()=>el.classList.toggle('on'));
+    jg.appendChild(el);
+  });
+
+  /* ---------- funnels ---------- */
+  const lowStages=[
+    ['TOFU','Discover',['Instagram Reels of farmer stories','SEO blogs: "Lakadong turmeric benefits"','Micro-influencer recipe UGC']],
+    ['MOFU','Trust',['Seal of Trust + certifications on every page','Reviews and ratings','Google Shopping ads']],
+    ['BOFU','Buy',['Spice-box bundles to lift AOV','Free-shipping threshold','COD for first-time buyers · Blinkit, Zepto']],
+    ['RETENTION','Repeat',['WhatsApp reorder nudge every 30 days','Email newsletter + recipes','Loyalty points on reorders']]
+  ];
+  const highStages=[
+    ['SEARCH','Capture intent',['Google ads: "home lift price in India"','SEO city & price guides','YouTube customer testimonials']],
+    ['CAPTURE','Get the lead',['Enquiry form: floors, state, new/existing','Brochure download as lead magnet','WhatsApp click-to-chat · CRM qualification']],
+    ['NURTURE','Build trust',['Retargeting with testimonial videos','Forbes / Times Property coverage','Speed-to-lead: call within 5 minutes']],
+    ['CLOSE','Win the deal',['Experience Centre visit','Site inspection + custom quote','Architect & builder partnerships']]
+  ];
+  function buildFunnel(id,data){
+    const wrap=document.getElementById(id);
+    data.forEach(([st,sh,items])=>{
+      const el=document.createElement('div');
+      el.className='stage';
+      el.innerHTML=`<span class="plus">+</span><div class="st">${st}</div><div class="sh">${sh}</div>
+        <ul>${items.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+      el.addEventListener('click',()=>el.classList.toggle('open'));
+      wrap.appendChild(el);
+    });
+  }
+  buildFunnel('funnelLow',lowStages);
+  buildFunnel('funnelHigh',highStages);
+
+  /* ---------- poll ---------- */
+  const poll=document.getElementById('poll');
+  let votes={low:0,high:0};
+  try{ votes=JSON.parse(localStorage.getItem('dmVotes'))||votes; }catch(e){}
+  let voted=false;
+  function renderPoll(){
+    const tot=votes.low+votes.high||1;
+    const lp=Math.round(votes.low/tot*100), hp=100-lp;
+    document.getElementById('pctLow').textContent=lp+'%';
+    document.getElementById('pctHigh').textContent=hp+'%';
+    poll.querySelector('[data-side=low] .fill').style.width=lp+'%';
+    poll.querySelector('[data-side=high] .fill').style.width=hp+'%';
+  }
+  poll.querySelectorAll('.opt').forEach(opt=>{
+    opt.addEventListener('click',()=>{
+      const side=opt.dataset.side;
+      votes[side]++;
+      try{ localStorage.setItem('dmVotes',JSON.stringify(votes)); }catch(e){}
+      poll.classList.add('voted');
+      poll.querySelectorAll('.opt').forEach(o=>o.classList.remove('pick'));
+      opt.classList.add('pick');
+      voted=true;
+      renderPoll();
+      document.getElementById('pollNote').innerHTML='Both can work — a ₹2,500 kit is <b>mid-ticket</b>: capture with search + social, then nurture on WhatsApp. Tap again to re-vote.';
+    });
+  });
+  renderPoll();
+
+  /* ---------- programme chips ---------- */
+  const chipData=['SEO & SEM','Social media','Content marketing','Email & WhatsApp','Analytics','AI marketing'];
+  const chips=document.getElementById('chips');
+  chipData.forEach((c,idx)=>{
+    const el=document.createElement('span');
+    el.className='chip'; el.textContent=c; el.style.animationDelay=(idx*0.08)+'s';
+    chips.appendChild(el);
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>
