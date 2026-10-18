@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="../assets/poorit-mark.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Internals Lab — Tokens, Weightage & the Next Word</title>
+<style>
+  :root{
+    --bg:#eef3fc; --bg2:#e4ecfb; --panel:#ffffff; --panel2:#f3f7fe;
+    --line:#dbe4f3; --line2:#c4d2ea;
+    --ink:#0f1b2e; --muted:#4a5b76; --dim:#8496b3;
+    --cyan:#0891b2; --violet:#7c3aed; --amber:#e08a00;
+    --green:#0d9f6e; --pink:#db2777; --red:#e11d48; --blue:#2563eb;
+    --board:#0b1324;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans","Noto Sans Kannada","Noto Sans Devanagari",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+    background:radial-gradient(1100px 700px at 80% -10%,rgba(124,58,237,.10),transparent 60%),
+               radial-gradient(900px 600px at 5% 10%,rgba(8,145,178,.12),transparent 55%),
+               linear-gradient(180deg,var(--bg),var(--bg2));background-attachment:fixed}
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 22px}
+
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px;
+    background:linear-gradient(180deg,rgba(238,243,252,.96),rgba(238,243,252,.7) 70%,transparent);backdrop-filter:blur(6px)}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .nav{display:flex;gap:6px;flex-wrap:wrap}
+  .nav a{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid transparent}
+  .nav a:hover{border-color:var(--line2);background:var(--panel)}
+  @media(max-width:760px){.nav{display:none}}
+  .timer{font-family:var(--mono);font-size:13px;color:var(--cyan);border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:var(--panel);cursor:pointer;user-select:none;letter-spacing:.05em;white-space:nowrap}
+  .timer:hover{border-color:var(--cyan)}
+  .progress-track{position:fixed;top:0;left:0;right:0;height:3px;z-index:60}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));box-shadow:0 0 12px var(--cyan);transition:width .12s linear}
+
+  section{padding:96px 0 64px;position:relative}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .eyebrow .num{color:var(--violet)}
+  .eyebrow .mins{color:var(--dim);letter-spacing:.08em;text-transform:none}
+  .eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+  h1{font-size:clamp(36px,6.5vw,70px);line-height:1.02;margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+  h2{font-size:clamp(26px,4.2vw,42px);line-height:1.08;margin:0 0 14px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+  h3{font-size:17px;margin:0 0 8px;font-weight:800}
+  .lead{font-size:clamp(16px,2vw,19.5px);color:var(--muted);max-width:64ch;margin:0 0 8px}
+  .grad{background:linear-gradient(120deg,var(--cyan),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 20px 50px -30px rgba(30,58,120,.35)}
+  .task{border-left:4px solid var(--amber);background:rgba(224,138,0,.08);border-radius:0 12px 12px 0;padding:12px 16px;margin:18px 0;font-size:15px}
+  .task b{color:var(--amber);font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;font-size:12px;margin-right:8px}
+  .btn{font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:#fff;background:linear-gradient(135deg,var(--cyan),#0ea5c4);border:none;border-radius:10px;padding:11px 18px;cursor:pointer;font-weight:700;text-transform:uppercase;transition:transform .1s,box-shadow .2s;box-shadow:0 10px 24px -10px rgba(8,145,178,.7)}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--line2);box-shadow:none}
+  .btn.ghost:hover{background:rgba(8,145,178,.08)}
+  .btn.violet{background:linear-gradient(135deg,var(--violet),#8b5cf6);box-shadow:0 10px 24px -10px rgba(124,58,237,.7)}
+  .btn.sm{padding:8px 12px;font-size:11.5px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .grid2.wide{grid-template-columns:1.3fr .7fr}
+  @media(max-width:820px){.grid2,.grid2.wide{grid-template-columns:1fr}}
+  .chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);background:var(--panel)}
+  .chip.on{border-color:var(--green);color:var(--green)}
+  .chip.off{border-color:var(--amber);color:var(--amber)}
+  .hint{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.03em}
+  .mono-label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:80px}
+  .hero .kicker{font-family:var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--violet);font-size:13px;margin-bottom:22px}
+  .hero .sub{margin-top:24px;max-width:58ch}
+  .agenda{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:36px}
+  @media(max-width:820px){.agenda{grid-template-columns:repeat(2,1fr)}}
+  .ag{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-decoration:none;color:inherit;transition:transform .15s,border-color .15s}
+  .ag:hover{transform:translateY(-3px);border-color:var(--violet)}
+  .ag .n{font-family:var(--mono);font-weight:800;color:var(--violet);font-size:13px}
+  .ag .t{font-weight:700;font-size:14.5px;margin-top:4px;line-height:1.3}
+  .ag .m{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px}
+
+  textarea.inp{width:100%;font-family:var(--sans);font-size:18px;color:var(--ink);background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;resize:vertical;min-height:110px;line-height:1.5}
+  textarea.inp:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(8,145,178,.12)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .rd{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .rd .v{font-family:var(--mono);font-size:26px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1}
+  .rd .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+  .rd.hidden .v{filter:blur(9px);user-select:none}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+  .seg button{font-family:var(--mono);font-size:12px;padding:8px 12px;background:transparent;color:var(--muted);border:none;cursor:pointer;letter-spacing:.04em}
+  .seg button.active{background:var(--cyan);color:#fff;font-weight:700}
+  .tokens{display:flex;flex-wrap:wrap;gap:5px;margin-top:16px;min-height:48px;line-height:1.3}
+  .tok{font-family:var(--mono);font-size:15px;padding:5px 7px;border-radius:7px;white-space:pre;border:1px solid rgba(0,0,0,.06);cursor:default;transition:transform .1s}
+  .tok:hover{transform:scale(1.08)}
+  .tok.id{font-size:13px}
+  .cost{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  @media(max-width:600px){.cost{grid-template-columns:1fr}}
+  .cost .rd .v{font-size:20px;color:var(--violet)}
+
+  .lang-rows{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+  .lr{display:grid;grid-template-columns:120px 1fr 70px;gap:12px;align-items:center}
+  @media(max-width:600px){.lr{grid-template-columns:90px 1fr 56px}}
+  .lr .nm{font-family:var(--mono);font-size:12.5px;color:var(--muted);letter-spacing:.04em}
+  .lr .track{height:34px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);position:relative;overflow:hidden}
+  .lr .barf{position:absolute;inset:0;width:0;border-radius:7px;transition:width .9s cubic-bezier(.2,.85,.25,1);display:flex;align-items:center;padding:0 10px}
+  .lr .barlbl{font-family:var(--mono);font-size:12px;color:#fff;font-weight:700;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .lr .cnt{font-family:var(--mono);font-weight:800;font-size:20px;text-align:right;font-variant-numeric:tabular-nums}
+  .lr .txt{font-size:14px;color:var(--muted);grid-column:2/4;margin-top:-6px}
+  .lang-edit{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;margin-top:8px}
+  .lang-edit input{font-family:var(--sans);font-size:15px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--panel)}
+
+  .sent{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;align-items:center}
+  .w{font-size:19px;font-weight:600;padding:8px 13px;border-radius:10px;border:2px solid var(--line2);background:var(--panel);cursor:pointer;position:relative;transition:transform .12s,background .3s,border-color .2s;user-select:none}
+  .w:hover{transform:translateY(-2px);border-color:var(--cyan)}
+  .w.q{border-color:var(--violet);background:var(--violet);color:#fff;box-shadow:0 0 0 4px rgba(124,58,237,.18)}
+  .w .pct{position:absolute;top:-9px;right:-6px;font-family:var(--mono);font-size:10.5px;background:var(--ink);color:#fff;padding:1px 6px;border-radius:999px;opacity:0;transition:opacity .2s}
+  .w.show .pct{opacity:1}
+  .board{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--board);box-shadow:0 20px 50px -30px rgba(30,58,120,.4)}
+  .board canvas{width:100%;height:auto;display:block}
+  .slider{width:100%;-webkit-appearance:none;appearance:none;height:10px;border-radius:999px;outline:none;margin:6px 0 0;background:linear-gradient(90deg,var(--cyan),var(--violet) 55%,var(--pink))}
+  .slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--violet);cursor:pointer;box-shadow:0 3px 10px rgba(30,40,90,.35)}
+  .slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--violet);cursor:pointer}
+  .slider-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:8px}
+  .explain{background:var(--panel2);border:1px dashed var(--line2);border-radius:12px;padding:12px 16px;font-size:15px;margin-top:14px;min-height:64px}
+  .explain b{color:var(--violet)}
+
+  .prompt-box{font-size:clamp(19px,2.6vw,25px);font-weight:600;line-height:1.5;padding:18px 20px;border-radius:14px;background:var(--panel);border:1px solid var(--line);min-height:84px}
+  .prompt-box .gen{color:var(--violet)}
+  .prompt-box .cursor{display:inline-block;width:9px;height:1em;background:var(--violet);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .bars{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+  .bar{display:grid;grid-template-columns:110px 1fr 58px;gap:10px;align-items:center;font-family:var(--mono);font-size:13.5px}
+  .bar .lab{text-align:right;color:var(--ink);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .tr{height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+  .bar .fl{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .bar.cut{opacity:.35}
+  .bar.cut .fl{background:var(--dim)}
+  .bar.pick .fl{background:linear-gradient(90deg,var(--amber),var(--pink))}
+  .bar .pc{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+  .knobs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:600px){.knobs{grid-template-columns:1fr}}
+  .knob .val{font-family:var(--mono);font-weight:800;color:var(--violet);font-size:18px}
+
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .qq .qt{font-weight:700;font-size:16.5px;margin-bottom:10px}
+  .qq .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:600px){.qq .opts{grid-template-columns:1fr}}
+  .qq .opt{padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);cursor:pointer;font-size:14.5px;transition:background .15s}
+  .qq .opt:hover{background:#e9f0fd}
+  .qq .opt.right{background:rgba(13,159,110,.14);border-color:var(--green)}
+  .qq .opt.wrong{background:rgba(225,29,72,.10);border-color:var(--red)}
+  .qq .why{font-size:13.5px;color:var(--muted);margin-top:8px;display:none}
+  .qq.done .why{display:block}
+  .score{font-family:var(--mono);font-size:30px;font-weight:800;color:var(--violet)}
+
+  .foot{padding:50px 0 90px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12.5px;letter-spacing:.06em}
+  .foot .big{font-family:var(--sans);font-size:clamp(22px,3.4vw,30px);color:var(--ink);font-weight:800;margin-bottom:12px}
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  .notes{display:none;background:#fff8e6;border:1px solid #f1d58a;border-radius:12px;padding:12px 16px;font-size:14px;margin-top:16px}
+  .notes b{color:var(--amber)}
+  body.presenter .notes{display:block}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}*{animation-duration:.001s!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-page="lab1">
+
+<div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+<div class="topbar">
+  <div class="brand"><a href="../index.html" style="font:inherit;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><img src="../assets/poorit-mark.png" alt="" style="width:22px;height:22px;border-radius:6px;pointer-events:none">Poorit Technologies ·</a>  LLM&nbsp;Internals&nbsp;Lab</div>
+  <nav class="nav">
+    <a href="#tokens">01 Tokens</a><a href="#tax">02 Token tax</a><a href="#attention">03 Weightage</a><a href="#next">04 Next word</a><a href="#quiz">05 Quiz</a>
+  </nav>
+  <div class="row" style="gap:8px">
+    <span class="chip" id="tokStatus" title="Tokenizer status">loading…</span>
+    <div class="timer" id="timer" title="Click to start / pause. Double-click to reset.">⏱ 40:00</div>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="wrap">
+    <div class="kicker">Faculty Development Programme · Hands-on</div>
+    <h1>Inside the <span class="grad">black box</span>:<br>how an LLM reads, weighs<br>and writes.</h1>
+    <p class="lead sub">Every ChatGPT answer is built from three small ideas: text is chopped into <strong>tokens</strong>, each token decides how much <strong>weightage</strong> to give the others, and then the model picks <strong>one next token</strong> at a time. In 40 minutes you will do all three with your own hands.</p>
+    <div class="row" style="margin-top:28px">
+      <a class="btn" href="#tokens">▸ Start the lab</a>
+      <span class="chip">4 experiments · 1 quiz</span>
+      <span class="chip">~40 minutes</span>
+      <button class="btn ghost sm" id="presenterBtn" title="Shows facilitator notes under each section">Presenter notes</button>
+    </div>
+    <div class="agenda">
+      <a class="ag" href="#tokens"><div class="n">01</div><div class="t">What is a token?</div><div class="m">10 min · tokenizer</div></a>
+      <a class="ag" href="#tax"><div class="n">02</div><div class="t">The Indian-language token tax</div><div class="m">6 min · compare</div></a>
+      <a class="ag" href="#attention"><div class="n">03</div><div class="t">Weightage: attention</div><div class="m">12 min · click words</div></a>
+      <a class="ag" href="#next"><div class="n">04</div><div class="t">Picking the next word</div><div class="m">8 min · dials</div></a>
+      <a class="ag" href="#quiz"><div class="n">05</div><div class="t">Quick quiz</div><div class="m">4 min · score</div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 01 TOKENS ============ -->
+<section id="tokens">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">01</span> What is a token? <span class="mins">· 10 min</span></p>
+    <h2 class="reveal">The model never sees words. It sees <span class="grad">tokens</span>.</h2>
+    <p class="lead reveal">Type anything. The same tokenizer that GPT-4o uses runs right here in your browser and chops the text into coloured pieces. Notice: common words are one token, rare words break into parts, and a space at the start of a word counts.</p>
+
+    <div class="panel reveal" style="margin-top:24px">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <span class="mono-label">Try:</span>
+          <button class="btn ghost sm" data-sample="en">English</button>
+          <button class="btn ghost sm" data-sample="rare">Rare words</button>
+          <button class="btn ghost sm" data-sample="num">Numbers</button>
+          <button class="btn ghost sm" data-sample="code">Code</button>
+          <button class="btn ghost sm" data-sample="kn">Kannada</button>
+          <button class="btn ghost sm" data-sample="emoji">Emoji</button>
+        </div>
+        <div class="seg"><button class="active" data-view="text">Text</button><button data-view="ids">Token IDs</button></div>
+      </div>
+      <textarea class="inp" id="tokIn" style="margin-top:14px" spellcheck="false">Poorit Technologies teams are learning how large language models work.</textarea>
+      <div class="stats">
+        <div class="rd" id="rdTok"><div class="v" id="sTok">0</div><div class="k">Tokens</div></div>
+        <div class="rd"><div class="v" id="sWord">0</div><div class="k">Words</div></div>
+        <div class="rd"><div class="v" id="sChar">0</div><div class="k">Characters</div></div>
+        <div class="rd"><div class="v" id="sRatio">0</div><div class="k">Chars / token</div></div>
+      </div>
+      <div class="tokens" id="tokOut"></div>
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <span class="hint">Rule of thumb for English: 1 token ≈ 4 characters ≈ ¾ of a word. 100 tokens ≈ 75 words.</span>
+        <span class="hint" id="tokModel">tokenizer: o200k_base (GPT-4o / GPT-4.1)</span>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:22px">
+      <div class="panel reveal">
+        <h3>🎯 Guess the count</h3>
+        <p style="margin:0 0 10px;color:var(--muted);font-size:14.5px">Click <em>Hide</em>, paste a sentence, make everyone guess the token count, then reveal. Closest guess wins.</p>
+        <div class="row">
+          <button class="btn sm" id="hideBtn">Hide count</button>
+          <button class="btn ghost sm" id="revealBtn" disabled>Reveal</button>
+          <input id="guessIn" type="number" placeholder="your guess" style="font-family:var(--mono);padding:8px 10px;border:1px solid var(--line2);border-radius:8px;width:120px">
+          <span id="guessOut" class="hint"></span>
+        </div>
+      </div>
+      <div class="panel reveal">
+        <h3>💰 What does this text cost to send?</h3>
+        <p style="margin:0 0 6px;color:var(--muted);font-size:14.5px">APIs bill per token, not per word. Cost of the text above as an <em>input</em>, at illustrative list prices per million tokens (edit <code>RATES</code> in the source to update).</p>
+        <div class="cost" id="costOut"></div>
+      </div>
+    </div>
+
+    <div class="task reveal"><b>Task</b> Type your own name, then your college name in Kannada. How many tokens does each take? Try adding a space before a word and see the colour change.</div>
+    <div class="notes"><b>Presenter:</b> Open with the live counter. Key beats: (1) "strawberry" → why models miscount letters; (2) "2024" vs "20241013" → numbers chunk; (3) space-prefixed words are different tokens. Keep the guessing game to 2 rounds.</div>
+  </div>
+</section>
+
+<!-- ============ 02 TOKEN TAX ============ -->
+<section id="tax">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">02</span> The Indian-language token tax <span class="mins">· 6 min</span></p>
+    <h2 class="reveal">Same sentence. <span class="grad">Very different bill.</span></h2>
+    <p class="lead reveal">Tokenizers were trained mostly on English. The same greeting in Kannada, Hindi or Tamil costs roughly twice the tokens on GPT-4o's tokenizer, and far more on older ones. More tokens means more money, slower replies, and a smaller effective context window. Edit any line and watch the bars update live.</p>
+
+    <div class="panel reveal" style="margin-top:24px">
+      <div class="lang-rows" id="langRows"></div>
+      <details style="margin-top:18px">
+        <summary class="hint" style="cursor:pointer">Edit the sentences</summary>
+        <div id="langEdit"></div>
+      </details>
+    </div>
+    <div class="task reveal"><b>Task</b> Write one line of feedback you'd give a student, in English and in your mother tongue. Which costs more? Then compare the Roman-script version ("Kanglish"). Is it cheaper? With older tokenizers it was by a wide margin; newer ones have closed the gap.</div>
+    <div class="notes"><b>Presenter:</b> Point out that the romanised row is no longer cheaper on o200k (it was 3× cheaper on GPT-3.5's tokenizer). Discussion prompt: what does this mean for building AI tools for Kannada-medium students? (Answer: pick models with Indic-aware tokenizers, keep prompts short, expect higher cost.)</div>
+  </div>
+</section>
+
+<!-- ============ 03 ATTENTION ============ -->
+<section id="attention">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">03</span> Weightage · Attention <span class="mins">· 12 min</span></p>
+    <h2 class="reveal">Every word asks: <span class="grad">who should I pay attention to?</span></h2>
+    <p class="lead reveal">This is the heart of a transformer. Each token sends out a <strong>query</strong> ("what am I looking for?"), every other token offers a <strong>key</strong> ("what do I have?"), and the match scores become weightages that sum to 100%. Click any word to see where its attention goes.</p>
+
+    <div class="panel reveal" style="margin-top:24px">
+      <div class="row" style="justify-content:space-between">
+        <div class="seg" id="sentPick"></div>
+        <span class="hint">Click a word · weights shown as % · hover arcs below</span>
+      </div>
+      <div class="sent" id="sentOut"></div>
+      <div class="grid2 wide">
+        <div class="board"><canvas id="attnCanvas" width="700" height="300"></canvas></div>
+        <div>
+          <div class="mono-label">Focus (sharpness)</div>
+          <input type="range" class="slider" id="sharp" min="0" max="100" value="60">
+          <div class="slider-scale"><span>spread evenly</span><span>laser focus</span></div>
+          <div class="explain" id="attnExplain">Click a word above.</div>
+        </div>
+      </div>
+    </div>
+    <div class="task reveal"><b>Task</b> Click <strong>it</strong> in sentence A, then switch to sentence B and click <strong>it</strong> again. Same word, different weightage. Why? Then drag the focus slider to zero: what does the model lose?</div>
+    <div class="notes"><b>Presenter:</b> Weights here are hand-set to mirror what real attention heads learn, so the demo is deterministic. Real models have dozens of heads per layer doing this in parallel, each looking for something different (grammar, reference, position). Mention "attention is all you need" (2017) once, then move on.</div>
+  </div>
+</section>
+
+<!-- ============ 04 NEXT TOKEN ============ -->
+<section id="next">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">04</span> Picking the next word <span class="mins">· 8 min</span></p>
+    <h2 class="reveal">It's not magic. It's a <span class="grad">probability list</span>, one token at a time.</h2>
+    <p class="lead reveal">After all that weighing, the model ends with a score for every possible next token. Three dials decide which one gets written: <strong>temperature</strong> (how adventurous), <strong>top-k</strong> (how many candidates survive) and <strong>top-p</strong> (how much probability mass survives). Press <em>Sample</em> repeatedly and watch the sentence grow.</p>
+
+    <div class="panel reveal" style="margin-top:24px">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div class="seg" id="promptPick"></div>
+        <div class="row"><button class="btn sm" id="sampleBtn">▸ Sample next token</button><button class="btn ghost sm" id="resetGen">Reset</button></div>
+      </div>
+      <div class="prompt-box" id="promptBox"></div>
+      <div class="knobs">
+        <div class="knob"><div class="mono-label">Temperature <span class="val" id="tVal">1.0</span></div><input type="range" class="slider" id="temp" min="5" max="200" value="100"><div class="slider-scale"><span>0.05 safe</span><span>2.0 wild</span></div></div>
+        <div class="knob"><div class="mono-label">Top-k <span class="val" id="kVal">8</span></div><input type="range" class="slider" id="topk" min="1" max="8" value="8"><div class="slider-scale"><span>1</span><span>8 (all)</span></div></div>
+        <div class="knob"><div class="mono-label">Top-p <span class="val" id="pVal">1.00</span></div><input type="range" class="slider" id="topp" min="10" max="100" value="100"><div class="slider-scale"><span>0.10</span><span>1.00</span></div></div>
+      </div>
+      <div class="bars" id="bars"></div>
+      <div class="hint" style="margin-top:10px">Greyed-out rows were cut by top-k / top-p and can never be chosen. The highlighted row is the one that was just sampled.</div>
+    </div>
+    <div class="task reveal"><b>Task</b> Set temperature to 0.05 and sample 5 times: do you ever get a different word? Now set it to 2.0 with top-k = 8. Then find the settings you'd want for (a) grading rubrics, (b) a creative-writing prompt.</div>
+    <div class="notes"><b>Presenter:</b> Candidate lists are hand-authored to look like real model outputs. Core message: "hallucination" is the same mechanism as creativity, just a confident wrong token winning the lottery. Temperature 0 is not "truth mode", it's "most common mode".</div>
+  </div>
+</section>
+
+<!-- ============ 05 QUIZ ============ -->
+<section id="quiz">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">05</span> Quick quiz <span class="mins">· 4 min</span></p>
+    <h2 class="reveal">Six questions. <span class="grad">Shout the answer.</span></h2>
+    <div class="row reveal" style="margin:10px 0 18px"><span class="mono-label">Score</span><span class="score" id="score">0 / 6</span><button class="btn ghost sm" id="quizReset">Reset</button></div>
+    <div class="quiz reveal" id="quizOut"></div>
+  </div>
+</section>
+
+<div class="foot">
+  <div class="big">Tokens in. Weightage. One token out. Repeat.</div>
+  <div>LLM Internals Lab · Poorit Technologies · runs fully in your browser, nothing is sent anywhere</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gpt-tokenizer@3/dist/o200k_base.js" onerror="window.__tokFail=true"></script>
+<script>
+/* =========================================================
+   Shared helpers
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const PALETTE = ['#bfe3f5','#f9d5a7','#c9f0d4','#f5c6d8','#e0d4fb','#fdf0a6','#c8ecef','#f8d3c2','#d6e6c4','#f1d1f1'];
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* reveal on scroll */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+$$('.reveal').forEach(el => io.observe(el));
+
+/* progress + timer */
+addEventListener('scroll', () => { const h = document.documentElement; $('#progressBar').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%'; }, { passive: true });
+(() => {
+  const el = $('#timer'); const TOTAL = 40 * 60; let left = TOTAL, run = false, iv = null;
+  const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const draw = () => { el.textContent = (run ? '⏸ ' : '⏱ ') + fmt(left); el.style.color = left < 300 ? 'var(--red)' : 'var(--cyan)'; };
+  el.addEventListener('click', () => { run = !run; if (run) iv = setInterval(() => { if (left > 0) left--; draw(); }, 1000); else clearInterval(iv); draw(); });
+  el.addEventListener('dblclick', () => { run = false; clearInterval(iv); left = TOTAL; draw(); });
+  draw();
+})();
+$('#presenterBtn').addEventListener('click', () => document.body.classList.toggle('presenter'));
+
+/* =========================================================
+   Tokenizer (real o200k_base via CDN, heuristic fallback)
+   ========================================================= */
+const FALLBACK = {
+  encode(t) { const parts = t.match(/\s?[A-Za-z]+|\s?\d{1,3}|\s?[^\sA-Za-z\d]|\s+/gu) || []; const ids = []; parts.forEach(p => { const n = /[^\x00-\x7F]/.test(p) ? Math.max(1, Math.ceil([...p].length * 1.6)) : Math.max(1, Math.ceil(p.length / 5)); for (let i = 0; i < n; i++) ids.push(((p.charCodeAt(0) * 131 + i * 7919) % 199999)); }); this._p = parts; return ids; },
+  pieces(t) { const out = []; (t.match(/\s?[A-Za-z]+|\s?\d{1,3}|\s?[^\sA-Za-z\d]|\s+/gu) || []).forEach(p => { if (/[^\x00-\x7F]/.test(p)) { const ch = [...p]; const n = Math.max(1, Math.ceil(ch.length * 1.6)); for (let i = 0; i < n; i++) out.push({ s: i < ch.length ? ch[i] : '·', id: (p.charCodeAt(0) * 131 + i * 7919) % 199999 }); } else if (p.length <= 5) out.push({ s: p, id: (p.charCodeAt(0) * 131) % 199999 }); else for (let i = 0; i < p.length; i += 5) out.push({ s: p.slice(i, i + 5), id: (p.charCodeAt(i) * 131 + i) % 199999 }); }); return out; }
+};
+let TOK = null;
+function initTok() {
+  const lib = window.GPTTokenizer_o200k_base;
+  if (lib && typeof lib.encode === 'function' && !window.__tokFail) {
+    TOK = {
+      real: true,
+      encode: t => lib.encode(t),
+      pieces(t) { // decode id-by-id, merging ids whose bytes don't form a full UTF-8 char yet
+        const ids = lib.encode(t); const out = []; let buf = [];
+        for (const id of ids) { buf.push(id); const s = lib.decode(buf); if (!s.includes('�')) { out.push({ s, id: buf.length === 1 ? buf[0] : buf.join('+'), n: buf.length }); buf = []; } }
+        if (buf.length) out.push({ s: lib.decode(buf), id: buf.join('+'), n: buf.length });
+        return out;
+      }
+    };
+    $('#tokStatus').textContent = 'real tokenizer'; $('#tokStatus').className = 'chip on';
+  } else {
+    TOK = { real: false, encode: t => FALLBACK.encode(t), pieces: t => FALLBACK.pieces(t) };
+    $('#tokStatus').textContent = 'offline estimate'; $('#tokStatus').className = 'chip off';
+    $('#tokModel').textContent = 'tokenizer: offline approximation (CDN unreachable)';
+  }
+}
+const count = t => TOK.encode(t).length;
+
+/* ---------- 01 tokens ---------- */
+const SAMPLES = {
+  en: "Poorit Technologies teams are learning how large language models work.",
+  rare: "The strawberry's unbelievability was indescribable. Mangaluru, Moodbidri, Dakshina Kannada.",
+  num: "2024 20241013 3.14159 1,00,000 9876543210",
+  code: "for (let i = 0; i < 10; i++) { console.log(i * 2); }",
+  kn: "ಆಳ್ವಾಸ್ ಕಾಲೇಜಿನ ಅಧ್ಯಾಪಕರು ದೊಡ್ಡ ಭಾಷಾ ಮಾದರಿಗಳು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ ಎಂದು ಕಲಿಯುತ್ತಿದ್ದಾರೆ.",
+  emoji: "Great class today 🎉👩‍🏫📚 see you tomorrow 🙏"
+};
+const RATES = [ // USD per 1M input tokens, illustrative list prices
+  { name: 'OpenAI GPT-4o', rate: 2.50 }, { name: 'Anthropic Claude Sonnet', rate: 3.00 }, { name: 'Google Gemini Flash', rate: 0.30 }
+];
+let view = 'text', hidden = false;
+function renderTokens() {
+  const t = $('#tokIn').value; const pcs = TOK.pieces(t); const n = TOK.encode(t).length;
+  const words = (t.trim().match(/\S+/g) || []).length; const chars = [...t].length;
+  $('#sTok').textContent = n; $('#sWord').textContent = words; $('#sChar').textContent = chars; $('#sRatio').textContent = n ? (chars / n).toFixed(1) : '0';
+  $('#tokOut').innerHTML = pcs.map((p, i) => `<span class="tok ${view === 'ids' ? 'id' : ''}" style="background:${PALETTE[i % PALETTE.length]}" title="${esc(p.s)} → ${p.id}">${view === 'ids' ? p.id : esc(p.s).replace(/\n/g, '↵')}</span>`).join('');
+  $('#costOut').innerHTML = RATES.map(r => `<div class="rd"><div class="v">$${(n * r.rate / 1e6).toFixed(5)}</div><div class="k">${r.name}</div></div>`).join('');
+}
+$('#tokIn').addEventListener('input', renderTokens);
+$$('[data-sample]').forEach(b => b.addEventListener('click', () => { $('#tokIn').value = SAMPLES[b.dataset.sample]; renderTokens(); }));
+$$('[data-view]').forEach(b => b.addEventListener('click', () => { $$('[data-view]').forEach(x => x.classList.remove('active')); b.classList.add('active'); view = b.dataset.view; renderTokens(); }));
+$('#hideBtn').addEventListener('click', () => { hidden = true; $('#rdTok').classList.add('hidden'); $('#tokOut').style.filter = 'blur(8px)'; $('#revealBtn').disabled = false; $('#guessOut').textContent = ''; });
+$('#revealBtn').addEventListener('click', () => { hidden = false; $('#rdTok').classList.remove('hidden'); $('#tokOut').style.filter = ''; $('#revealBtn').disabled = true; const g = +$('#guessIn').value, n = +$('#sTok').textContent; if (g) $('#guessOut').textContent = g === n ? '🎯 exact!' : `off by ${Math.abs(g - n)}`; });
+
+/* ---------- 02 token tax ---------- */
+const LANGS = [
+  { name: 'English', color: '#0891b2', text: 'Good morning teachers, welcome to the workshop.' },
+  { name: 'Hindi', color: '#7c3aed', text: 'सुप्रभात शिक्षकों, कार्यशाला में आपका स्वागत है।' },
+  { name: 'Kannada', color: '#db2777', text: 'ಶುಭೋದಯ ಶಿಕ್ಷಕರೇ, ಕಾರ್ಯಾಗಾರಕ್ಕೆ ಸ್ವಾಗತ.' },
+  { name: 'Tamil', color: '#e08a00', text: 'காலை வணக்கம் ஆசிரியர்களே, பட்டறைக்கு வரவேற்கிறோம்.' },
+  { name: 'Kanglish', color: '#0d9f6e', text: 'Shubhodaya shikshakare, karyagarakke swagatha.' }
+];
+function renderLangs() {
+  const counts = LANGS.map(l => count(l.text)); const max = Math.max(...counts, 1); const base = counts[0] || 1;
+  $('#langRows').innerHTML = LANGS.map((l, i) => `<div class="lr"><div class="nm">${l.name}</div><div class="track"><div class="barf" style="background:${l.color};width:0" data-w="${counts[i] / max * 100}"><span class="barlbl">${(counts[i] / base).toFixed(1)}× English</span></div></div><div class="cnt" style="color:${l.color}">${counts[i]}</div><div class="txt">${esc(l.text)}</div></div>`).join('');
+  requestAnimationFrame(() => $$('#langRows .barf').forEach(b => b.style.width = b.dataset.w + '%'));
+  if (!$('#langEdit').children.length) $('#langEdit').innerHTML = LANGS.map((l, i) => `<div class="lang-edit"><span class="nm hint">${l.name}</span><input data-li="${i}" value="${esc(l.text)}"></div>`).join('');
+}
+$('#langEdit').addEventListener('input', e => { if (e.target.dataset.li != null) { LANGS[+e.target.dataset.li].text = e.target.value; renderLangs(); } });
+
+/* ---------- 03 attention ---------- */
+/* Hand-authored weightages (which tokens a query word "looks at"), mirroring what real heads learn. Others default to a mild recency pattern. */
+const SENTS = [
+  { label: 'A · "tired"', words: ['The', 'animal', "didn't", 'cross', 'the', 'street', 'because', 'it', 'was', 'too', 'tired'],
+    attn: { 7: { 1: .62, 5: .10, 7: .08, 10: .12, 3: .04 }, 10: { 7: .30, 1: .38, 8: .08, 9: .14 }, 3: { 1: .40, 5: .35, 2: .15 }, 5: { 4: .35, 3: .40, 1: .10 } },
+    note: { 7: '<b>"it"</b> puts most of its weightage on <b>animal</b>: an animal can be tired, a street cannot. The model learned this from reading, nobody programmed the rule.', 10: '<b>"tired"</b> looks back at <b>animal</b> and <b>it</b> to confirm who is tired.', 3: '<b>"cross"</b> links its subject (<b>animal</b>) and its object (<b>street</b>).' } },
+  { label: 'B · "wide"', words: ['The', 'animal', "didn't", 'cross', 'the', 'street', 'because', 'it', 'was', 'too', 'wide'],
+    attn: { 7: { 5: .60, 1: .12, 7: .08, 10: .14, 3: .04 }, 10: { 7: .30, 5: .40, 8: .06, 9: .14 }, 3: { 1: .40, 5: .35, 2: .15 }, 5: { 4: .35, 3: .40, 1: .10 } },
+    note: { 7: 'Now <b>"it"</b> shifts its weightage to <b>street</b>: streets are wide, animals are not. One changed word at the end re-routes the attention of a word in the middle.', 10: '<b>"wide"</b> looks back at <b>street</b>, the thing that can be wide.', 3: '<b>"cross"</b> links its subject (<b>animal</b>) and its object (<b>street</b>).' } },
+  { label: 'C · Kannada', words: ['ನಾನು', 'ಇಂದು', 'ಕಾಲೇಜಿಗೆ', 'ಹೋಗಿ', 'ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ', 'ಪಾಠ', 'ಮಾಡಿದೆ'],
+    attn: { 6: { 0: .35, 5: .35, 4: .18, 1: .06 }, 5: { 6: .40, 4: .35, 2: .10 }, 3: { 2: .55, 0: .25, 1: .10 } },
+    note: { 6: '<b>"ಮಾಡಿದೆ"</b> (did) looks for its doer <b>ನಾನು</b> (I) and its object <b>ಪಾಠ</b> (lesson). Attention works the same way in any language, if the tokenizer gives it clean pieces.', 5: '<b>"ಪಾಠ"</b> attends to the verb and to the students who receive it.', 3: '<b>"ಹೋಗಿ"</b> (went) binds to the place: <b>ಕಾಲೇಜಿಗೆ</b> (to college).' } }
+];
+let sIdx = 0, qIdx = 7;
+function attnWeights(si, qi, sharp) {
+  const s = SENTS[si]; const n = s.words.length; let w = new Array(n).fill(0);
+  if (s.attn[qi]) Object.entries(s.attn[qi]).forEach(([k, v]) => w[+k] = v); else for (let i = 0; i <= qi; i++) w[i] = Math.exp(-(qi - i) * .35);
+  w = w.map(v => Math.max(v, .01));
+  const tau = 0.25 + (1 - sharp) * 3;                 // sharpness slider acts like softmax temperature
+  const z = w.map(v => Math.pow(v, 1 / tau)); const Z = z.reduce((a, b) => a + b, 0);
+  return z.map(v => v / Z);
+}
+function renderSent() {
+  const s = SENTS[sIdx]; if (qIdx >= s.words.length) qIdx = s.words.length - 1;
+  $('#sentPick').innerHTML = SENTS.map((x, i) => `<button class="${i === sIdx ? 'active' : ''}" data-si="${i}">${x.label}</button>`).join('');
+  const w = attnWeights(sIdx, qIdx, $('#sharp').value / 100);
+  $('#sentOut').innerHTML = s.words.map((t, i) => { const a = w[i]; const bg = i === qIdx ? '' : `background:rgba(8,145,178,${(a * 1.1).toFixed(2)});`; return `<span class="w show ${i === qIdx ? 'q' : ''}" data-wi="${i}" style="${bg}">${esc(t)}<span class="pct">${Math.round(a * 100)}%</span></span>`; }).join('');
+  $('#attnExplain').innerHTML = (s.note[qIdx]) || `<b>"${esc(s.words[qIdx])}"</b> has no strong preference here, so its weightage spreads over nearby words. Try <b>it</b>, <b>cross</b> or the last word.`;
+  drawArcs(s.words, w);
+}
+function drawArcs(words, w) {
+  const c = $('#attnCanvas'), g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
+  g.fillStyle = '#0b1324'; g.fillRect(0, 0, W, H);
+  const n = words.length, pad = 40, step = (W - pad * 2) / (n - 1), y = H - 46;
+  // arcs
+  for (let i = 0; i < n; i++) { if (i === qIdx) continue; const a = w[i]; const x1 = pad + qIdx * step, x2 = pad + i * step; const r = Math.abs(x2 - x1) / 2; const cx = (x1 + x2) / 2;
+    g.beginPath(); g.arc(cx, y, r, Math.PI, 0); g.strokeStyle = `rgba(34,211,238,${(0.08 + a * 0.9).toFixed(2)})`; g.lineWidth = 1 + a * 14; g.stroke(); }
+  // nodes
+  g.font = 'bold 14px system-ui, "Noto Sans Kannada", sans-serif'; g.textAlign = 'center';
+  for (let i = 0; i < n; i++) { const x = pad + i * step; g.beginPath(); g.arc(x, y, i === qIdx ? 9 : 5 + w[i] * 14, 0, Math.PI * 2); g.fillStyle = i === qIdx ? '#a78bfa' : `rgba(34,211,238,${(0.25 + w[i]).toFixed(2)})`; g.fill();
+    g.fillStyle = i === qIdx ? '#c4b5fd' : '#cbd5e1'; g.save(); g.translate(x, y + 18); g.rotate(n > 9 ? -0.35 : 0); g.textAlign = n > 9 ? 'right' : 'center'; g.fillText(words[i].length > 9 ? words[i].slice(0, 8) + '…' : words[i], 0, 10); g.restore(); }
+  g.fillStyle = '#64748b'; g.font = '11px ui-monospace, monospace'; g.textAlign = 'left'; g.fillText('query → keys · thicker arc = more weightage', 12, 20);
+}
+$('#sentPick').addEventListener('click', e => { if (e.target.dataset.si != null) { sIdx = +e.target.dataset.si; renderSent(); } });
+$('#sentOut').addEventListener('click', e => { const el = e.target.closest('[data-wi]'); if (el) { qIdx = +el.dataset.wi; renderSent(); } });
+$('#sharp').addEventListener('input', renderSent);
+
+/* ---------- 04 next token ---------- */
+const PROMPTS = [
+  { label: 'Capital', text: 'The capital of Karnataka is', cands: [['Bengaluru', 6.2], ['Bangalore', 5.4], ['Mysuru', 2.1], ['Mangaluru', 1.3], ['the', 1.0], ['located', 0.6], ['Hyderabad', -0.2], ['a', -0.5]], next: { Bengaluru: [['.', 5], [',', 4.2], ['which', 2.5], ['and', 1.5], ['city', 1.0], ['(', 0.8], ['–', 0.3], ['the', 0]] } },
+  { label: 'Essay', text: 'Dear students, the most important skill for your future is', cands: [['learning', 4.8], ['adaptability', 4.5], ['critical', 4.1], ['communication', 3.9], ['curiosity', 3.4], ['coding', 2.6], ['not', 2.2], ['discipline', 2.0]] },
+  { label: 'Poem', text: 'The monsoon over Mangaluru', cands: [['arrives', 4.2], ['is', 4.0], ['sings', 3.1], ['drums', 2.9], ['whispers', 2.7], ['paints', 2.4], ['forgets', 1.6], ['never', 1.5]] }
+];
+let pIdx = 0, gen = [], lastPick = -1;
+const softmax = (logits, T) => { const m = Math.max(...logits); const e = logits.map(l => Math.exp((l - m) / T)); const Z = e.reduce((a, b) => a + b, 0); return e.map(v => v / Z); };
+function currentCands() { const p = PROMPTS[pIdx]; const last = gen[gen.length - 1]; if (last && p.next && p.next[last]) return p.next[last]; if (gen.length) return [['.', 4.5], ['and', 3.2], ['which', 2.6], [',', 2.4], ['because', 1.8], ['for', 1.2], ['today', 0.9], ['!', 0.4]]; return p.cands; }
+function renderGen(pickIdx = -1) {
+  const p = PROMPTS[pIdx]; const T = $('#temp').value / 100, K = +$('#topk').value, P = $('#topp').value / 100;
+  $('#tVal').textContent = T.toFixed(2); $('#kVal').textContent = K; $('#pVal').textContent = P.toFixed(2);
+  $('#promptPick').innerHTML = PROMPTS.map((x, i) => `<button class="${i === pIdx ? 'active' : ''}" data-pi="${i}">${x.label}</button>`).join('');
+  $('#promptBox').innerHTML = esc(p.text) + ' <span class="gen">' + esc(gen.map(t => /^[.,!–(]/.test(t) ? t : ' ' + t).join('').trim()) + '</span><span class="cursor"></span>';
+  const c = currentCands(); const probs = softmax(c.map(x => x[1]), T);
+  const order = probs.map((v, i) => i).sort((a, b) => probs[b] - probs[a]);
+  const keep = new Set(); let mass = 0; order.forEach((i, rank) => { if (rank < K && mass < P) { keep.add(i); mass += probs[i]; } });
+  const kz = [...keep].reduce((a, i) => a + probs[i], 0); const final = probs.map((v, i) => keep.has(i) ? v / kz : 0);
+  $('#bars').innerHTML = order.map(i => `<div class="bar ${keep.has(i) ? '' : 'cut'} ${i === pickIdx ? 'pick' : ''}" data-ci="${i}"><div class="lab">${esc(c[i][0])}</div><div class="tr"><div class="fl" data-w="${(final[i] * 100).toFixed(1)}"></div></div><div class="pc">${(final[i] * 100).toFixed(1)}%</div></div>`).join('');
+  requestAnimationFrame(() => $$('#bars .fl').forEach(b => b.style.width = b.dataset.w + '%'));
+  return { c, final };
+}
+$('#sampleBtn').addEventListener('click', () => { const { c, final } = renderGen(); let r = Math.random(), i = 0; for (; i < final.length - 1; i++) { r -= final[i]; if (r <= 0) break; } while (final[i] === 0) i = (i + 1) % final.length; renderGen(i); setTimeout(() => { gen.push(c[i][0]); if (gen.length > 8) gen = []; renderGen(); }, 650); });
+$('#resetGen').addEventListener('click', () => { gen = []; renderGen(); });
+$('#promptPick').addEventListener('click', e => { if (e.target.dataset.pi != null) { pIdx = +e.target.dataset.pi; gen = []; renderGen(); } });
+['temp', 'topk', 'topp'].forEach(id => $('#' + id).addEventListener('input', () => renderGen()));
+
+/* ---------- 05 quiz ---------- */
+const QUIZ = [
+  { q: 'An LLM reads text as…', o: ['Words', 'Letters', 'Tokens', 'Sentences'], a: 2, why: 'Text is chopped into tokens (sub-word pieces) before the model ever sees it.' },
+  { q: 'Roughly how many English words is 100 tokens?', o: ['25', '75', '100', '400'], a: 1, why: '1 token ≈ ¾ of a word, so 100 tokens ≈ 75 words.' },
+  { q: 'Why does Kannada text usually cost more tokens than English?', o: ['Kannada has more letters', 'The tokenizer saw mostly English during training', 'Unicode is slower', 'It doesn\'t, it is the same'], a: 1, why: 'Tokenizers learn frequent chunks from their training data, which is English-heavy, so Indic scripts get split into many small pieces.' },
+  { q: 'In "…because it was too tired", attention lets "it" give most weightage to…', o: ['because', 'animal', 'street', 'tired'], a: 1, why: 'Weightage flows to the token that resolves the meaning: an animal can be tired.' },
+  { q: 'Setting temperature to 0 makes the model…', o: ['Always truthful', 'Pick the most probable token every time', 'Slower', 'Use fewer tokens'], a: 1, why: 'Temperature 0 = most likely token, which is "most common", not "most correct".' },
+  { q: 'An LLM writes a paragraph by…', o: ['Planning the whole paragraph first', 'Copying from a database', 'Predicting one next token at a time, repeatedly', 'Searching the internet'], a: 2, why: 'Each generated token is appended to the input and the whole process runs again for the next one.' }
+];
+let score = 0;
+function renderQuiz() {
+  score = 0; $('#score').textContent = `0 / ${QUIZ.length}`;
+  $('#quizOut').innerHTML = QUIZ.map((q, qi) => `<div class="qq" data-q="${qi}"><div class="qt">${qi + 1}. ${esc(q.q)}</div><div class="opts">${q.o.map((o, oi) => `<div class="opt" data-o="${oi}">${esc(o)}</div>`).join('')}</div><div class="why">${esc(q.why)}</div></div>`).join('');
+}
+$('#quizOut').addEventListener('click', e => { const opt = e.target.closest('.opt'); if (!opt) return; const box = opt.closest('.qq'); if (box.classList.contains('done')) return; const q = QUIZ[+box.dataset.q]; const oi = +opt.dataset.o; box.classList.add('done'); if (oi === q.a) { opt.classList.add('right'); score++; } else { opt.classList.add('wrong'); box.querySelector(`[data-o="${q.a}"]`).classList.add('right'); } $('#score').textContent = `${score} / ${QUIZ.length}`; });
+$('#quizReset').addEventListener('click', renderQuiz);
+
+/* ---------- boot ---------- */
+initTok(); renderTokens(); renderLangs(); renderSent(); renderGen(); renderQuiz();
+</script>
+<div style="max-width:1080px;margin:0 auto 40px;padding:0 22px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:#fff;border:1px solid #d9e4eb;border-radius:12px;padding:12px 16px">
+<label style="display:flex;align-items:center;gap:10px;font-weight:700"><input type="checkbox" id="doneBox" style="width:20px;height:20px"> Mark this lab complete</label>
+<a href="../index.html" style="font-weight:700;color:#1d8fd6;text-decoration:none">← Back to GenAI Foundations</a></div></div>
+<link rel="stylesheet" href="../assets/lab-overlay.css">
+<script src="../assets/course.js" data-root="../"></script>
+</body>
+</html>

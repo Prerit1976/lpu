@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="../assets/poorit-mark.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How LLMs Are Built — Data, Transformer, Training, Context</title>
+<style>
+  :root{
+    --bg:#eef3fc; --bg2:#e4ecfb; --panel:#ffffff; --panel2:#f3f7fe;
+    --line:#dbe4f3; --line2:#c4d2ea;
+    --ink:#0f1b2e; --muted:#4a5b76; --dim:#8496b3;
+    --cyan:#0891b2; --violet:#7c3aed; --amber:#e08a00;
+    --green:#0d9f6e; --pink:#db2777; --red:#e11d48; --blue:#2563eb;
+    --board:#0b1324;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans","Noto Sans Kannada","Noto Sans Devanagari",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+    background:radial-gradient(1100px 700px at 80% -10%,rgba(124,58,237,.10),transparent 60%),
+               radial-gradient(900px 600px at 5% 10%,rgba(8,145,178,.12),transparent 55%),
+               linear-gradient(180deg,var(--bg),var(--bg2));background-attachment:fixed}
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 22px}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px;
+    background:linear-gradient(180deg,rgba(238,243,252,.96),rgba(238,243,252,.7) 70%,transparent);backdrop-filter:blur(6px)}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .nav{display:flex;gap:6px;flex-wrap:wrap}
+  .nav a{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid transparent}
+  .nav a:hover{border-color:var(--line2);background:var(--panel)}
+  @media(max-width:760px){.nav{display:none}}
+  .timer{font-family:var(--mono);font-size:13px;color:var(--cyan);border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:var(--panel);cursor:pointer;user-select:none;letter-spacing:.05em;white-space:nowrap}
+  .timer:hover{border-color:var(--cyan)}
+  .progress-track{position:fixed;top:0;left:0;right:0;height:3px;z-index:60}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));box-shadow:0 0 12px var(--cyan);transition:width .12s linear}
+  section{padding:96px 0 64px;position:relative}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .eyebrow .num{color:var(--violet)}
+  .eyebrow .mins{color:var(--dim);letter-spacing:.08em;text-transform:none}
+  .eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+  h1{font-size:clamp(36px,6.5vw,70px);line-height:1.02;margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+  h2{font-size:clamp(26px,4.2vw,42px);line-height:1.08;margin:0 0 14px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+  h3{font-size:17px;margin:0 0 8px;font-weight:800}
+  .lead{font-size:clamp(16px,2vw,19.5px);color:var(--muted);max-width:64ch;margin:0 0 8px}
+  .grad{background:linear-gradient(120deg,var(--cyan),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 20px 50px -30px rgba(30,58,120,.35)}
+  .task{border-left:4px solid var(--amber);background:rgba(224,138,0,.08);border-radius:0 12px 12px 0;padding:12px 16px;margin:18px 0;font-size:15px}
+  .task b{color:var(--amber);font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;font-size:12px;margin-right:8px}
+  .btn{font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:#fff;background:linear-gradient(135deg,var(--cyan),#0ea5c4);border:none;border-radius:10px;padding:11px 18px;cursor:pointer;font-weight:700;text-transform:uppercase;transition:transform .1s,box-shadow .2s;box-shadow:0 10px 24px -10px rgba(8,145,178,.7)}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--line2);box-shadow:none}
+  .btn.ghost:hover{background:rgba(8,145,178,.08)}
+  .btn.violet{background:linear-gradient(135deg,var(--violet),#8b5cf6);box-shadow:0 10px 24px -10px rgba(124,58,237,.7)}
+  .btn.amber{background:linear-gradient(135deg,var(--amber),#f59e0b);box-shadow:0 10px 24px -10px rgba(224,138,0,.7)}
+  .btn.sm{padding:8px 12px;font-size:11.5px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .grid2.wide{grid-template-columns:1.3fr .7fr}
+  @media(max-width:820px){.grid2,.grid2.wide{grid-template-columns:1fr}}
+  .chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);background:var(--panel)}
+  .chip.on{border-color:var(--green);color:var(--green)}
+  .chip.off{border-color:var(--amber);color:var(--amber)}
+  .hint{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.03em}
+  .mono-label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:80px}
+  .hero .kicker{font-family:var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--violet);font-size:13px;margin-bottom:22px}
+  .hero .sub{margin-top:24px;max-width:58ch}
+  .agenda{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:36px}
+  @media(max-width:820px){.agenda{grid-template-columns:repeat(2,1fr)}}
+  .ag{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-decoration:none;color:inherit;transition:transform .15s,border-color .15s}
+  .ag:hover{transform:translateY(-3px);border-color:var(--violet)}
+  .ag .n{font-family:var(--mono);font-weight:800;color:var(--violet);font-size:13px}
+  .ag .t{font-weight:700;font-size:14.5px;margin-top:4px;line-height:1.3}
+  .ag .m{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .rd{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .rd .v{font-family:var(--mono);font-size:26px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1}
+  .rd .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+  .seg button{font-family:var(--mono);font-size:12px;padding:8px 12px;background:transparent;color:var(--muted);border:none;cursor:pointer;letter-spacing:.04em}
+  .seg button.active{background:var(--cyan);color:#fff;font-weight:700}
+  .slider{width:100%;-webkit-appearance:none;appearance:none;height:10px;border-radius:999px;outline:none;margin:6px 0 0;background:linear-gradient(90deg,var(--cyan),var(--violet) 55%,var(--pink))}
+  .slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--violet);cursor:pointer;box-shadow:0 3px 10px rgba(30,40,90,.35)}
+  .slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--violet);cursor:pointer}
+  .slider-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:8px}
+  .explain{background:var(--panel2);border:1px dashed var(--line2);border-radius:12px;padding:12px 16px;font-size:15px;margin-top:14px;min-height:64px}
+  .explain b{color:var(--violet)}
+  .explain.warn{border-color:var(--red);background:rgba(225,29,72,.06)}
+  .explain.warn b{color:var(--red)}
+
+  /* 01 data curation */
+  .snips{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  @media(max-width:860px){.snips{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.snips{grid-template-columns:1fr}}
+  .snip{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,opacity .3s,transform .15s;position:relative}
+  .snip .src{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .snip .body{font-size:13.5px;line-height:1.45;color:var(--ink);min-height:64px;white-space:pre-wrap;word-break:break-word}
+  .snip .body.code{font-family:var(--mono);font-size:12px;background:var(--panel2);border-radius:8px;padding:8px}
+  .snip .acts{display:flex;gap:6px;margin-top:auto}
+  .snip .acts button{flex:1;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:7px 8px;border-radius:8px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);cursor:pointer;font-weight:700}
+  .snip.keep{border-color:var(--green)} .snip.keep .acts .k{background:var(--green);color:#fff;border-color:var(--green)}
+  .snip.drop{border-color:var(--red)} .snip.drop .acts .d{background:var(--red);color:#fff;border-color:var(--red)}
+  .snip .verdict{display:none;font-size:12.5px;border-radius:8px;padding:6px 9px;line-height:1.4}
+  .snip .verdict b{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:2px}
+  .snips.graded .snip .verdict{display:block}
+  .snips.graded .snip.agree .verdict{background:rgba(13,159,110,.12);border:1px solid var(--green)}
+  .snips.graded .snip.disagree .verdict{background:rgba(225,29,72,.10);border:1px solid var(--red)}
+  .snips.graded .snip.vdrop{opacity:.55}
+  .snips.graded .snip.vdrop .body{text-decoration:line-through;text-decoration-color:rgba(225,29,72,.5)}
+  .funnel{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .fr{display:grid;grid-template-columns:150px 1fr 48px;gap:10px;align-items:center;font-family:var(--mono);font-size:12.5px}
+  @media(max-width:600px){.fr{grid-template-columns:110px 1fr 40px}}
+  .fr .lab{color:var(--muted);text-align:right}
+  .fr .tr{height:26px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+  .fr .fl{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .8s cubic-bezier(.2,.85,.25,1)}
+  .fr .pc{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+  .mix{display:flex;height:34px;border-radius:9px;overflow:hidden;border:1px solid var(--line);margin-top:10px}
+  .mix div{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;transition:width .8s;white-space:nowrap;overflow:hidden}
+
+  /* 02 transformer */
+  .pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:16px 0}
+  @media(max-width:760px){.pipe{grid-template-columns:repeat(3,1fr)}}
+  .st{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s;font-size:12.5px;font-weight:700;line-height:1.25}
+  .st .ic{font-size:22px;display:block;margin-bottom:4px}
+  .st .n{font-family:var(--mono);font-size:10px;color:var(--dim);display:block;letter-spacing:.1em}
+  .st:hover{transform:translateY(-2px);border-color:var(--cyan)}
+  .st.active{border-color:var(--violet);background:rgba(124,58,237,.08);box-shadow:0 0 0 4px rgba(124,58,237,.14)}
+  .st.done{border-color:var(--green)}
+  .stage-view{background:var(--board);color:#e2e8f0;border-radius:14px;padding:18px 20px;min-height:220px;border:1px solid var(--line)}
+  .stage-view h3{color:#c4b5fd;font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+  .stage-view p{margin:8px 0;font-size:15px;color:#cbd5e1}
+  .tk{display:inline-block;font-family:var(--mono);font-size:15px;padding:5px 8px;border-radius:7px;margin:3px;white-space:pre;color:#0f1b2e}
+  .vecrow{display:flex;align-items:center;gap:8px;margin:5px 0;flex-wrap:wrap}
+  .vecrow .nm{font-family:var(--mono);font-size:13px;width:88px;color:#e2e8f0}
+  .cell{width:26px;height:26px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:#0b1324;font-weight:700}
+  .aw{display:inline-block;padding:6px 10px;border-radius:8px;margin:3px;font-weight:700;font-size:15px;border:1px solid rgba(255,255,255,.1)}
+  .aw.q{background:#a78bfa;color:#0b1324}
+  .aw small{display:block;font-family:var(--mono);font-size:10px;font-weight:400;opacity:.85}
+  .stack{display:flex;flex-direction:column-reverse;gap:3px;margin:10px 0;max-height:150px;overflow:hidden}
+  .stack div{height:8px;border-radius:3px;background:linear-gradient(90deg,#22d3ee,#a78bfa);opacity:.8}
+  .obar{display:grid;grid-template-columns:110px 1fr 56px;gap:10px;align-items:center;font-family:var(--mono);font-size:13px;margin:5px 0}
+  .obar .l{text-align:right;color:#e2e8f0;font-weight:700}
+  .obar .t{height:18px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden}
+  .obar .f{height:100%;width:0;background:linear-gradient(90deg,#22d3ee,#a78bfa);transition:width .6s}
+  .obar .p{color:#94a3b8;text-align:right}
+  .order{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  @media(max-width:640px){.order{grid-template-columns:repeat(2,1fr)}}
+  .oc{background:var(--panel);border:2px solid var(--line2);border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .12s,border-color .15s,opacity .2s;user-select:none;line-height:1.3}
+  .oc:hover{transform:translateY(-2px);border-color:var(--cyan)}
+  .oc.ok{border-color:var(--green);background:rgba(13,159,110,.1);opacity:.6;cursor:default;transform:none}
+  .oc.bad{animation:shake .3s;border-color:var(--red)}
+  @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .seq{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:38px;margin-top:10px}
+  .seq span{font-family:var(--mono);font-size:12px;background:var(--green);color:#fff;padding:5px 9px;border-radius:7px;font-weight:700}
+  .seq i{color:var(--dim);font-style:normal}
+
+  /* 03 training */
+  .stages3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  @media(max-width:760px){.stages3{grid-template-columns:1fr}}
+  .sc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;border-top:5px solid var(--cyan)}
+  .sc.b{border-top-color:var(--cyan)} .sc.s{border-top-color:var(--amber)} .sc.r{border-top-color:var(--violet)}
+  .sc .nm{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .sc h3{font-size:18px;margin:4px 0 6px}
+  .sc .facts{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
+  .sc .out{margin-top:10px;background:var(--panel2);border:1px dashed var(--line2);border-radius:10px;padding:10px 12px;font-size:14px;min-height:150px;white-space:pre-wrap;line-height:1.5}
+  .sc .out .cursor{display:inline-block;width:8px;height:1em;background:var(--violet);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(max-width:640px){.pair{grid-template-columns:1fr}}
+  .resp{background:var(--panel);border:2px solid var(--line2);border-radius:12px;padding:14px;font-size:14.5px;cursor:pointer;transition:transform .12s,border-color .15s;line-height:1.5;white-space:pre-wrap}
+  .resp:hover{transform:translateY(-2px);border-color:var(--violet)}
+  .resp .ab{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--dim);display:block;margin-bottom:6px}
+  .resp.chosen{border-color:var(--violet);background:rgba(124,58,237,.07)}
+  .resp.locked{cursor:default;transform:none}
+  .userq{font-weight:700;font-size:17px;padding:12px 16px;background:var(--panel);border-left:4px solid var(--cyan);border-radius:0 10px 10px 0;margin-top:14px}
+  .userq small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.1em;font-weight:400}
+  .meters{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+  .mt{display:grid;grid-template-columns:110px 1fr 36px;gap:10px;align-items:center;font-family:var(--mono);font-size:12.5px}
+  .mt .tr{height:16px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+  .mt .fl{height:100%;width:0;transition:width .5s;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+  .mt.bad .fl{background:linear-gradient(90deg,var(--amber),var(--red))}
+
+  /* 04 context */
+  .chat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+  .msg{padding:9px 12px;border-radius:10px;font-size:14px;max-width:88%;line-height:1.45;position:relative;transition:opacity .4s}
+  .msg.u{align-self:flex-end;background:rgba(8,145,178,.12);border:1px solid rgba(8,145,178,.3)}
+  .msg.a{align-self:flex-start;background:var(--panel2);border:1px solid var(--line2)}
+  .msg .tc{font-family:var(--mono);font-size:10px;color:var(--dim);display:block;margin-top:3px}
+  .msg.out{opacity:.28;filter:grayscale(1)}
+  .msg.out::after{content:"forgotten — outside window";position:absolute;top:-8px;right:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:#fff;padding:1px 6px;border-radius:999px;opacity:1}
+  .win{height:30px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;position:relative;margin-top:10px}
+  .win .fl{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .5s}
+  .win .fl.full{background:linear-gradient(90deg,var(--amber),var(--red))}
+  .win .lb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink)}
+  .ctxin{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ctxin input{font-family:var(--sans);font-size:15px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;background:var(--panel)}
+  .models{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  @media(max-width:640px){.models{grid-template-columns:repeat(2,1fr)}}
+  .md{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px}
+  .md b{display:block;font-family:var(--mono);font-size:18px;color:var(--violet)}
+  .md i{font-style:normal;color:var(--dim);font-family:var(--mono);font-size:11px}
+
+  /* 05 quiz */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .qq .qt{font-weight:700;font-size:16.5px;margin-bottom:10px}
+  .qq .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:600px){.qq .opts{grid-template-columns:1fr}}
+  .qq .opt{padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);cursor:pointer;font-size:14.5px;transition:background .15s}
+  .qq .opt:hover{background:#e9f0fd}
+  .qq .opt.right{background:rgba(13,159,110,.14);border-color:var(--green)}
+  .qq .opt.wrong{background:rgba(225,29,72,.10);border-color:var(--red)}
+  .qq .why{font-size:13.5px;color:var(--muted);margin-top:8px;display:none}
+  .qq.done .why{display:block}
+  .score{font-family:var(--mono);font-size:30px;font-weight:800;color:var(--violet)}
+  .foot{padding:50px 0 90px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12.5px;letter-spacing:.06em}
+  .foot .big{font-family:var(--sans);font-size:clamp(22px,3.4vw,30px);color:var(--ink);font-weight:800;margin-bottom:12px}
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  .notes{display:none;background:#fff8e6;border:1px solid #f1d58a;border-radius:12px;padding:12px 16px;font-size:14px;margin-top:16px}
+  .notes b{color:var(--amber)}
+  body.presenter .notes{display:block}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}*{animation-duration:.001s!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-page="lab2">
+
+<div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+<div class="topbar">
+  <div class="brand"><a href="../index.html" style="font:inherit;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><img src="../assets/poorit-mark.png" alt="" style="width:22px;height:22px;border-radius:6px;pointer-events:none">Poorit Technologies ·</a>  How&nbsp;LLMs&nbsp;Are&nbsp;Built</div>
+  <nav class="nav">
+    <a href="#data">01 Data</a><a href="#arch">02 Transformer</a><a href="#train">03 Training</a><a href="#ctx">04 Context</a><a href="#quiz">05 Quiz</a>
+  </nav>
+  <div class="row" style="gap:8px">
+    <span class="chip on">offline · no data leaves this page</span>
+    <div class="timer" id="timer" title="Click to start / pause. Double-click to reset.">⏱ 45:00</div>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="wrap">
+    <div class="kicker">Faculty Development Programme · Hands-on</div>
+    <h1>How an LLM is <span class="grad">actually built</span>:<br>from the messy web<br>to a chat window.</h1>
+    <p class="lead sub">Four things decide what a model like ChatGPT can do: the <strong>data</strong> someone chose to keep, the <strong>transformer</strong> that reads it, the <strong>three training stages</strong> that shape its behaviour, and the <strong>context window</strong> it works inside. In 45 minutes you will do each job yourself.</p>
+    <div class="row" style="margin-top:28px">
+      <a class="btn" href="#data">▸ Start the lab</a>
+      <span class="chip">4 hands-on jobs · 1 quiz</span>
+      <span class="chip">≤ 45 minutes</span>
+      <button class="btn ghost sm" id="presenterBtn" title="Shows facilitator notes under each section">Presenter notes</button>
+    </div>
+    <div class="agenda">
+      <a class="ag" href="#data"><div class="n">01</div><div class="t">Be the data curator</div><div class="m">10 min · keep / drop</div></a>
+      <a class="ag" href="#arch"><div class="n">02</div><div class="t">Walk through a transformer</div><div class="m">10 min · step + order</div></a>
+      <a class="ag" href="#train"><div class="n">03</div><div class="t">Pre-training → SFT → RLHF</div><div class="m">12 min · be the rater</div></a>
+      <a class="ag" href="#ctx"><div class="n">04</div><div class="t">Why context windows matter</div><div class="m">8 min · fill the window</div></a>
+      <a class="ag" href="#quiz"><div class="n">05</div><div class="t">Quick quiz</div><div class="m">5 min · score</div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 01 DATA ============ -->
+<section id="data">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">01</span> Data curation <span class="mins">· 10 min</span></p>
+    <h2 class="reveal">Be the <span class="grad">data curator</span>.</h2>
+    <p class="lead reveal">A model starts as a giant pile of scraped web pages. Someone has to decide what goes in. Below are 12 snippets from a pretend crawl. You are the filter.</p>
+    <div class="task reveal"><b>Task</b> Mark each snippet <strong>Keep</strong> or <strong>Drop</strong>, then press <strong>Run the real pipeline</strong> and see where you and the automated filters disagree.</div>
+    <div class="panel reveal">
+      <div class="row" style="justify-content:space-between">
+        <div class="row"><button class="btn" id="runPipe">▸ Run the real pipeline</button><button class="btn ghost sm" id="resetPipe">Reset</button></div>
+        <div class="row"><span class="mono-label">Your calls</span><span class="score" id="curScore" style="font-size:22px">0 / 12</span></div>
+      </div>
+      <div class="snips" id="snips"></div>
+      <div class="explain" id="curExplain">Decide all 12, then run the pipeline. Tip: ask "would I want the model to <b>repeat</b> this to a student?"</div>
+    </div>
+    <div class="grid2" style="margin-top:22px">
+      <div class="panel reveal">
+        <h3>The funnel</h3>
+        <p class="hint">Each filter throws away more. Only what survives becomes the model's "world".</p>
+        <div class="funnel" id="funnel"></div>
+      </div>
+      <div class="panel reveal">
+        <h3>What survived, by language</h3>
+        <p class="hint">The model's fluency in a language is roughly proportional to this bar.</p>
+        <div class="mix" id="mix"></div>
+        <div class="explain" id="mixExplain" style="min-height:40px">Run the pipeline to see the mix.</div>
+      </div>
+    </div>
+    <div class="notes"><b>Presenter:</b> Give 3 minutes for keep/drop in pairs, then run the pipeline on the projector. Beats: (1) the near-duplicate: dedup is the single biggest cut on the real web; (2) the exam answer with roll number: PII scrubbing is why models should not know your students; (3) the Pearson paragraph: licence is a judgement call, not a filter, and is where lawsuits live. Close on the language mix: a well-curated Indian dataset is the cheapest way to make a model better at Kannada. Real pipelines keep well under 20% of a raw crawl.</div>
+  </div>
+</section>
+
+<!-- ============ 02 TRANSFORMER ============ -->
+<section id="arch">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">02</span> Transformer architecture <span class="mins">· 10 min</span></p>
+    <h2 class="reveal">Walk one sentence <span class="grad">through the machine</span>.</h2>
+    <p class="lead reveal">A transformer is six ideas in a row. Click <strong>Next</strong> and watch what happens to <em>"Mangaluru is famous for its"</em> at each stage.</p>
+    <div class="task reveal"><b>Task</b> Step through all six stages. Then scroll down and put the shuffled cards back in order from memory.</div>
+    <div class="panel reveal">
+      <div class="pipe" id="pipe"></div>
+      <div class="stage-view" id="stageView"></div>
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <div class="row"><button class="btn ghost sm" id="prevSt">◂ Prev</button><button class="btn" id="nextSt">Next ▸</button></div>
+        <span class="hint" id="stHint">stage 1 of 6</span>
+      </div>
+    </div>
+    <div class="panel reveal" style="margin-top:22px">
+      <h3>Put the stages in order</h3>
+      <p class="hint">Click the cards in the order the model does them. Wrong clicks shake.</p>
+      <div class="seq" id="seq"><i>your sequence →</i></div>
+      <div class="order" id="order"></div>
+      <div class="row" style="margin-top:12px"><button class="btn ghost sm" id="shuffleBtn">Shuffle again</button><span class="hint" id="orderMsg"></span></div>
+    </div>
+    <div class="notes"><b>Presenter:</b> Do not explain matrices. The analogy that lands: embedding = "every token gets a GPS coordinate in meaning-space"; attention = "each token asks the others: who matters to me?"; feed-forward = "the token consults its memory of everything it read"; layers = "repeat this 30 to 100 times, each pass a little wiser". On the layer slider, say that the numbers are all this is: more layers and wider vectors = more parameters = more memory for patterns. The ordering game takes 2 minutes and is the retention check.</div>
+  </div>
+</section>
+
+<!-- ============ 03 TRAINING ============ -->
+<section id="train">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">03</span> Training stages <span class="mins">· 12 min</span></p>
+    <h2 class="reveal">Same question, <span class="grad">three stages</span> of the same model.</h2>
+    <p class="lead reveal">Pre-training makes a text-completer. Supervised fine-tuning teaches it to answer. RLHF teaches it what humans prefer. Watch all three respond to one prompt.</p>
+    <div class="panel reveal">
+      <div class="row" style="justify-content:space-between">
+        <div class="seg" id="tpPick"></div>
+        <button class="btn violet" id="runStages">▸ Run all three</button>
+      </div>
+      <div class="userq" id="tpPrompt"></div>
+      <div class="stages3">
+        <div class="sc b"><div class="nm">Stage 1</div><h3>Pre-training</h3><div class="facts">trillions of tokens · months · thousands of GPUs<br>goal: predict the next token</div><div class="out" id="outBase"></div></div>
+        <div class="sc s"><div class="nm">Stage 2</div><h3>Supervised fine-tuning</h3><div class="facts">~10k–100k written Q&amp;A examples · days<br>goal: answer like an assistant</div><div class="out" id="outSft"></div></div>
+        <div class="sc r"><div class="nm">Stage 3</div><h3>RLHF</h3><div class="facts">human raters pick A or B · weeks<br>goal: prefer what people prefer</div><div class="out" id="outRlhf"></div></div>
+      </div>
+    </div>
+    <div class="task reveal"><b>Task</b> Now <strong>you</strong> are the RLHF rater. For each prompt pick the better answer, A or B. Your choices train a reward model, shown live on the right.</div>
+    <div class="grid2 wide">
+      <div class="panel reveal">
+        <div class="row" style="justify-content:space-between"><span class="mono-label" id="pairNum">Pair 1 of 5</span><button class="btn ghost sm" id="pairReset">Restart</button></div>
+        <div class="userq" id="pairPrompt"></div>
+        <div class="pair" id="pairOut"></div>
+        <div class="explain" id="pairExplain">Click A or B.</div>
+      </div>
+      <div class="panel reveal">
+        <h3>Your reward model has learned to value…</h3>
+        <div class="meters" id="meters"></div>
+        <div class="explain" id="rmSummary" style="min-height:40px">Nothing yet.</div>
+      </div>
+    </div>
+    <div class="notes"><b>Presenter:</b> Run all three on the "leave letter" prompt first; the base model continuing like a forum page is the laugh and the lesson. On the rating pairs, let the room vote by show of hands before you click. Pair 3 is the trap: if the room picks the flattering wrong answer, say "you just trained sycophancy" and explain this is a real, measured failure mode. Pair 5 (fake certificate) shows RLHF is also where refusals come from. End: the model never sees "truth", only "what raters preferred".</div>
+  </div>
+</section>
+
+<!-- ============ 04 CONTEXT ============ -->
+<section id="ctx">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">04</span> Context window <span class="mins">· 8 min</span></p>
+    <h2 class="reveal">The model's <span class="grad">working memory</span> is a fixed-size window.</h2>
+    <p class="lead reveal">Everything the model knows about <em>this</em> conversation must fit in the window. When it overflows, the oldest messages fall out. Watch it forget your name.</p>
+    <div class="task reveal"><b>Task</b> Introduce yourself, add small talk until the bar turns red, then ask "What is my name?"</div>
+    <div class="grid2 wide">
+      <div class="panel reveal">
+        <div class="ctxin"><input id="ctxName" placeholder="Your name" value="Rekha"><input id="ctxSubj" placeholder="What you teach" value="Botany"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="introBtn">1 · Introduce yourself</button>
+          <button class="btn sm ghost" id="chatBtn">+ Small talk</button>
+          <button class="btn sm ghost" id="docBtn">+ Paste a long document</button>
+          <button class="btn sm violet" id="askBtn">Ask: what is my name?</button>
+          <button class="btn sm ghost" id="ctxReset">Clear</button>
+        </div>
+        <div class="win"><div class="fl" id="winFl"></div><div class="lb" id="winLb">0 / 120 tokens</div></div>
+        <div class="chat" id="chat"></div>
+      </div>
+      <div class="panel reveal">
+        <h3>Window size</h3>
+        <input type="range" class="slider" id="winSize" min="60" max="600" step="20" value="120">
+        <div class="slider-scale"><span>60 tokens</span><span id="winVal">120</span><span>600 tokens</span></div>
+        <div class="stats" style="grid-template-columns:1fr 1fr">
+          <div class="rd"><div class="v" id="ctxCost">$0.0000</div><div class="k">cost of this call*</div></div>
+          <div class="rd"><div class="v" id="ctxWork">1×</div><div class="k">attention work vs 60-token window</div></div>
+        </div>
+        <p class="hint" style="margin-top:8px">*illustrative, at $3 per 1M input tokens. Attention compares every token with every other, so work grows with the square of the window.</p>
+        <h3 style="margin-top:16px">Real windows, roughly</h3>
+        <div class="models">
+          <div class="md"><b>2K</b>GPT-3 · 2020<i>~3 pages</i></div>
+          <div class="md"><b>8K</b>GPT-4 · 2023<i>~12 pages</i></div>
+          <div class="md"><b>128K</b>most 2024 models<i>~a short novel</i></div>
+          <div class="md"><b>1M</b>Gemini / Claude 2025<i>~1,500 pages</i></div>
+        </div>
+        <div class="explain" style="margin-top:12px"><b>Why it matters to a teacher:</b> a 30-page syllabus + 40 student answers may not fit a small window. Bigger windows cost more per call, and even big windows recall the middle of a long document worse than the ends.</div>
+      </div>
+    </div>
+    <div class="notes"><b>Presenter:</b> Set the window to 120, introduce, add 3 small talks, ask: it still remembers. Add one long document: the intro falls out and the model asks your name again. Then drag the slider to 600 and ask again: the intro is back inside and it remembers. Point: "memory" in a chat app is not learning, it is the window. Mention that apps like ChatGPT add summaries or retrieval on top to fake a longer memory. Keep cost and the n² note to one sentence each.</div>
+  </div>
+</section>
+
+<!-- ============ 05 QUIZ ============ -->
+<section id="quiz">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">05</span> Quick quiz <span class="mins">· 5 min</span></p>
+    <h2 class="reveal">Six questions. <span class="grad">Shout the answer.</span></h2>
+    <div class="row reveal" style="margin:10px 0 18px"><span class="mono-label">Score</span><span class="score" id="score">0 / 6</span><button class="btn ghost sm" id="quizReset">Reset</button></div>
+    <div class="quiz reveal" id="quizOut"></div>
+  </div>
+</section>
+
+<div class="foot">
+  <div class="big">Curate. Read. Train. Remember within the window.</div>
+  <div>How LLMs Are Built · Poorit Technologies · runs fully in your browser, nothing is sent anywhere</div>
+</div>
+
+<script>
+/* ---------- shared ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const PALETTE = ['#bfe3f5','#f9d5a7','#c9f0d4','#f5c6d8','#e0d4fb','#fdf0a6','#c8ecef','#f8d3c2'];
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+$$('.reveal').forEach(el => io.observe(el));
+addEventListener('scroll', () => { const h = document.documentElement; $('#progressBar').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%'; }, { passive: true });
+(() => {
+  const el = $('#timer'); const TOTAL = 45 * 60; let left = TOTAL, run = false, iv = null;
+  const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const draw = () => { el.textContent = (run ? '⏸ ' : '⏱ ') + fmt(left); el.style.color = left < 300 ? 'var(--red)' : 'var(--cyan)'; };
+  el.addEventListener('click', () => { run = !run; if (run) iv = setInterval(() => { if (left > 0) left--; draw(); }, 1000); else clearInterval(iv); draw(); });
+  el.addEventListener('dblclick', () => { run = false; clearInterval(iv); left = TOTAL; draw(); });
+  draw();
+})();
+$('#presenterBtn').addEventListener('click', () => document.body.classList.toggle('presenter'));
+
+/* =========================================================
+   01 DATA CURATION
+   ========================================================= */
+const SNIPS = [
+  { src: 'wiki-style article', lang: 'English', keep: true, filter: 'kept', why: 'Clean, factual prose. This is the gold the crawl is sifted for.',
+    text: 'Mangaluru is a port city on the Arabian Sea coast of Karnataka. It is known for its beaches, Tulu culture and red clay roof tiles.' },
+  { src: 'forum post', lang: 'English', keep: false, filter: 'PII scrub', why: 'Contains a personal phone number. Real pipelines strip or drop phone, email and ID numbers.',
+    text: 'Anyone selling a used Activa in Moodbidri? Call me on 98765 43210 anytime, I will pick up.' },
+  { src: 'blog repost', lang: 'English', keep: false, filter: 'dedup', why: 'Near-duplicate of the first snippet. Dedup removes the largest share of any crawl, and duplicates make the model memorise instead of learn.',
+    text: 'Mangaluru is a port city on the Arabian Sea coast of Karnataka. It is known for its beaches, Tulu culture, and red clay roof tiles!!' },
+  { src: 'seo spam page', lang: 'English', keep: false, filter: 'quality', why: 'Repetitive, no sentences, keyword stuffing. A quality classifier scores this near zero.',
+    text: 'BUY CHEAP WATCHES click here click here best price best price cheap watches Mangalore cheap watches click here' },
+  { src: 'kannada news', lang: 'Kannada', keep: true, filter: 'kept', why: 'Good-quality Kannada text. Rare in web crawls, so every kept paragraph matters.',
+    text: 'ಮಂಗಳೂರು ವಿಶ್ವವಿದ್ಯಾಲಯವು ಈ ವರ್ಷ ಹೊಸ ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ ಕೋರ್ಸ್ ಅನ್ನು ಪ್ರಾರಂಭಿಸಲಿದೆ ಎಂದು ಕುಲಪತಿಗಳು ತಿಳಿಸಿದರು.' },
+  { src: 'github file', lang: 'Code', keep: true, filter: 'kept', why: 'Working code with a licence. Code is deliberately kept: it teaches structure and reasoning, not just syntax.', code: true,
+    text: 'def average(marks):\n    """Return the mean of a list of marks."""\n    return sum(marks) / len(marks)' },
+  { src: 'textbook scan', lang: 'English', keep: false, filter: 'licence', why: 'Explicit all-rights-reserved notice. Whether to keep copyrighted text is the most contested decision in LLM building and is now in court.',
+    text: 'Photosynthesis converts light energy into chemical energy stored in glucose. © 2019 Pearson Education. All rights reserved. Unauthorised copying prohibited.' },
+  { src: 'comment thread', lang: 'English', keep: false, filter: 'toxicity', why: 'Abusive generalisation about a group. Toxicity filters drop this so the model does not learn to repeat it.',
+    text: 'People from that community are all useless and should be thrown out of the college. Nobody wants them here.' },
+  { src: 'shopping site', lang: 'English', keep: false, filter: 'quality', why: 'Menu boilerplate with no content. Dropped as "navigation noise".',
+    text: 'Home | About Us | Login | Cart (0) | Track Order | Privacy Policy | Terms | © Shop' },
+  { src: 'uploaded answer sheet', lang: 'English', keep: false, filter: 'PII scrub', why: 'A named student with a roll number. Even if the content is fine, the identity is not the model\'s to learn.',
+    text: 'Name: Ananya Shetty   Roll No: 22BCA041\nQ3. Osmosis is the movement of water across a semi-permeable membrane from...' },
+  { src: 'recipe blog', lang: 'English', keep: true, filter: 'kept', why: 'Ordinary, useful, well-formed text. Most of a good dataset looks like this.',
+    text: 'Neer dosa needs only rice and water. Soak the rice for 4 hours, grind to a thin batter, and pour on a hot pan without spreading.' },
+  { src: 'broken page', lang: 'English', keep: false, filter: 'quality', why: 'Garbled, machine-generated or corrupted text. Quality filters look at sentence length and word mix and bin this.',
+    text: 'the the of and lorem ipsum 3kd9 college college of of asdf the result result the an the' }
+];
+const FILTERS = ['raw crawl', 'dedup', 'quality', 'PII scrub', 'toxicity', 'licence'];
+let calls = new Array(SNIPS.length).fill(null), graded = false;
+function renderSnips() {
+  $('#snips').innerHTML = SNIPS.map((s, i) => `<div class="snip ${calls[i] === true ? 'keep' : calls[i] === false ? 'drop' : ''}" data-i="${i}">
+    <div class="src">${esc(s.src)} · ${esc(s.lang)}</div>
+    <div class="body ${s.code ? 'code' : ''}">${esc(s.text)}</div>
+    <div class="verdict"><b>pipeline: ${s.keep ? 'keep' : 'drop · ' + s.filter}</b>${esc(s.why)}</div>
+    <div class="acts"><button class="k" data-call="1">Keep</button><button class="d" data-call="0">Drop</button></div></div>`).join('');
+  const decided = calls.filter(c => c !== null).length;
+  $('#curScore').textContent = graded ? `${calls.filter((c, i) => c === SNIPS[i].keep).length} / 12 agree` : `${decided} / 12`;
+  if (graded) {
+    $('#snips').classList.add('graded');
+    $$('#snips .snip').forEach((el, i) => { el.classList.add(calls[i] === SNIPS[i].keep ? 'agree' : 'disagree'); if (!SNIPS[i].keep) el.classList.add('vdrop'); });
+  } else $('#snips').classList.remove('graded');
+}
+$('#snips').addEventListener('click', e => { const b = e.target.closest('[data-call]'); if (!b || graded) return; const i = +b.closest('.snip').dataset.i; calls[i] = b.dataset.call === '1'; renderSnips(); });
+function renderFunnel(show) {
+  let remaining = SNIPS.length;
+  const rows = FILTERS.map(f => { if (f !== 'raw crawl') remaining -= SNIPS.filter(s => s.filter === f).length; return { f, n: remaining }; });
+  $('#funnel').innerHTML = rows.map(r => `<div class="fr"><div class="lab">${r.f === 'raw crawl' ? 'raw crawl' : 'after ' + r.f}</div><div class="tr"><div class="fl" data-w="${show ? r.n / SNIPS.length * 100 : 0}"></div></div><div class="pc">${show ? r.n : '?'}</div></div>`).join('');
+  requestAnimationFrame(() => $$('#funnel .fl').forEach(b => b.style.width = b.dataset.w + '%'));
+  const kept = SNIPS.filter(s => s.keep); const langs = {}; kept.forEach(s => langs[s.lang] = (langs[s.lang] || 0) + 1);
+  const colors = { English: '#0891b2', Kannada: '#db2777', Code: '#7c3aed' };
+  $('#mix').innerHTML = show ? Object.entries(langs).map(([l, n]) => `<div style="width:${n / kept.length * 100}%;background:${colors[l]}">${l} ${Math.round(n / kept.length * 100)}%</div>`).join('') : '<div style="width:100%;background:var(--line2);color:var(--muted)">?</div>';
+  $('#mixExplain').innerHTML = show ? `Only <b>${kept.length} of 12</b> survived (${Math.round(kept.length / 12 * 100)}%). Of those, one is Kannada. <b>That ratio is the model's Kannada ability.</b> A real crawl is far worse for Indian languages, which is why Indic datasets are being built by hand.` : 'Run the pipeline to see the mix.';
+}
+$('#runPipe').addEventListener('click', () => {
+  const undecided = calls.filter(c => c === null).length;
+  if (undecided) { $('#curExplain').innerHTML = `<b>${undecided} snippet${undecided > 1 ? 's' : ''} still undecided.</b> Make a call on every card first.`; return; }
+  graded = true; renderSnips(); renderFunnel(true);
+  const dis = SNIPS.map((s, i) => calls[i] !== s.keep ? s : null).filter(Boolean);
+  $('#curExplain').innerHTML = dis.length ? `You disagreed with the pipeline on <b>${dis.length}</b>: ${dis.map(s => `<b>${esc(s.src)}</b>`).join(', ')}. Red cards explain why. Disagreements are normal: real teams argue about exactly these (especially <b>licence</b>).` : `<b>Perfect agreement.</b> You would be hired at a frontier lab's data team. Now notice how little survived.`;
+});
+$('#resetPipe').addEventListener('click', () => { calls = calls.map(() => null); graded = false; renderSnips(); renderFunnel(false); $('#curExplain').innerHTML = 'Decide all 12, then run the pipeline.'; });
+
+/* =========================================================
+   02 TRANSFORMER WALKTHROUGH
+   ========================================================= */
+const TOKS = ['Mang', 'aluru', ' is', ' famous', ' for', ' its'];
+const hash = (s, k) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0) + k * 17) % 1000; return h / 1000; };
+const STAGES = [
+  { ic: '✂️', name: 'Tokenize', sub: 'text → tokens', render: () => `<h3>1 · Tokenize</h3><p>The sentence is chopped into pieces the model has seen before. "Mangaluru" is rare, so it becomes two tokens.</p><div>${TOKS.map((t, i) => `<span class="tk" style="background:${PALETTE[i]}">${esc(t)}</span>`).join('')}</div><p class="hint" style="color:#94a3b8">6 tokens · each gets an ID number from a 200,000-word dictionary</p>` },
+  { ic: '📍', name: 'Embed', sub: 'tokens → numbers', render: () => `<h3>2 · Embed</h3><p>Each token becomes a list of numbers: its coordinates in "meaning space". Similar words get similar numbers. Real models use 4,000 to 16,000 numbers per token; here are 10.</p>${TOKS.map((t, i) => `<div class="vecrow"><span class="nm">${esc(t)}</span>${Array.from({ length: 10 }, (_, k) => { const v = hash(t, k); return `<span class="cell" style="background:rgba(34,211,238,${(0.15 + v * .85).toFixed(2)})">${(v * 2 - 1).toFixed(1)}</span>`; }).join('')}</div>`).join('')}` },
+  { ic: '👀', name: 'Attention', sub: 'who matters to me?', render: () => { const w = { 0: .42, 1: .18, 2: .04, 3: .26, 4: .06 }; return `<h3>3 · Attention</h3><p>The last token <b style="color:#c4b5fd">" its"</b> asks every earlier token "how much do you matter to what comes next?" It learns to look hardest at <b style="color:#67e8f9">Mangaluru</b> and <b style="color:#67e8f9">famous</b>.</p><div>${TOKS.map((t, i) => i === 5 ? `<span class="aw q">${esc(t)}<small>asking</small></span>` : `<span class="aw" style="background:rgba(34,211,238,${(w[i] * 1.6).toFixed(2)});color:#e2e8f0">${esc(t)}<small>${Math.round(w[i] * 100)}%</small></span>`).join('')}</div><p class="hint" style="color:#94a3b8">Dozens of these "heads" run in parallel, each looking for something different: grammar, reference, position.</p>`; } },
+  { ic: '🧠', name: 'Feed-forward', sub: 'recall what I read', render: () => `<h3>4 · Feed-forward</h3><p>Now that " its" knows it is about <b>Mangaluru + famous</b>, it consults the patterns stored in the model's weights, the compressed memory of everything it read in stage 01.</p><div>${['beaches', 'seafood', 'temples', 'roof tiles', 'port', 'Tulu culture', 'banks', 'Yakshagana'].map((k, i) => `<span class="tk" style="background:${PALETTE[i]}">${k}</span>`).join('')}</div><p class="hint" style="color:#94a3b8">This is where "knowledge" lives. The recipe blog and wiki paragraph you kept in 01 shaped this list.</p>` },
+  { ic: '🔁', name: 'Repeat × N', sub: 'layers', render: () => `<h3>5 · Repeat for N layers</h3><p>Stages 3 and 4 together are one <b>layer</b>. The model stacks many. Early layers sort out grammar; later layers handle meaning and facts. Drag to see how big real models are.</p><input type="range" class="slider" id="layers" min="4" max="128" step="4" value="32"><div class="slider-scale" style="color:#94a3b8"><span>4 layers</span><span id="layerVal"></span><span>128 layers</span></div><div class="stack" id="stack"></div>` , after: () => { const draw = () => { const n = +$('#layers').value; const MODELS = [[12, 'GPT-2 small (2019) · 124M params'], [32, 'Llama-3 8B (2024) · 8B params'], [48, 'GPT-2 XL (2019) · 1.5B params'], [80, 'Llama-3 70B (2024) · 70B params'], [96, 'GPT-3 (2020) · 175B params'], [126, 'Llama-3 405B (2024) · 405B params']]; const near = MODELS.reduce((a, b) => Math.abs(b[0] - n) < Math.abs(a[0] - n) ? b : a); $('#layerVal').textContent = `${n} layers ≈ ${near[1]}`; $('#stack').innerHTML = Array.from({ length: n }, () => '<div></div>').join(''); }; $('#layers').addEventListener('input', draw); draw(); } },
+  { ic: '🎲', name: 'Predict', sub: 'probabilities → token', render: () => { const out = [['beaches', 31], ['seafood', 24], ['temples', 14], ['port', 9], ['roof', 7], ['Tulu', 6], ['banks', 4], ['beautiful', 3]]; return `<h3>6 · Predict the next token</h3><p>The final numbers become a probability for every token in the dictionary. One is picked (see the Internals Lab for temperature), appended to the sentence, and the whole machine runs again.</p>${out.map(([w, p]) => `<div class="obar"><div class="l">${w}</div><div class="t"><div class="f" data-w="${p}"></div></div><div class="p">${p}%</div></div>`).join('')}<p class="hint" style="color:#94a3b8">"Mangaluru is famous for its <b style="color:#c4b5fd">beaches</b>" → run again for the next word.</p>`; }, after: () => requestAnimationFrame(() => $$('#stageView .f').forEach(b => b.style.width = b.dataset.w + '%')) }
+];
+let st = 0;
+function renderStage() {
+  $('#pipe').innerHTML = STAGES.map((s, i) => `<div class="st ${i === st ? 'active' : i < st ? 'done' : ''}" data-st="${i}"><span class="ic">${s.ic}</span>${s.name}<span class="n">${s.sub}</span></div>`).join('');
+  $('#stageView').innerHTML = STAGES[st].render(); if (STAGES[st].after) STAGES[st].after();
+  $('#stHint').textContent = `stage ${st + 1} of 6`; $('#prevSt').disabled = st === 0; $('#nextSt').disabled = st === 5;
+}
+$('#pipe').addEventListener('click', e => { const el = e.target.closest('[data-st]'); if (el) { st = +el.dataset.st; renderStage(); } });
+$('#nextSt').addEventListener('click', () => { if (st < 5) { st++; renderStage(); } });
+$('#prevSt').addEventListener('click', () => { if (st > 0) { st--; renderStage(); } });
+/* ordering game */
+const ORDER = ['Chop the text into tokens', 'Turn each token into numbers (embedding)', 'Attention: each token weighs the others', 'Feed-forward: recall patterns from training', 'Repeat the last two steps for N layers', 'Turn numbers into probabilities, pick next token'];
+let deck = [], placed = 0;
+function shuffleDeck() { deck = ORDER.map((t, i) => ({ t, i })).sort(() => Math.random() - .5); placed = 0; renderOrder(); $('#orderMsg').textContent = ''; }
+function renderOrder() {
+  $('#order').innerHTML = deck.map(c => `<div class="oc ${c.i < placed ? 'ok' : ''}" data-oi="${c.i}">${esc(c.t)}</div>`).join('');
+  $('#seq').innerHTML = placed ? ORDER.slice(0, placed).map((t, i) => `<span>${i + 1}</span>`).join('<i>→</i>') : '<i>your sequence →</i>';
+}
+$('#order').addEventListener('click', e => { const el = e.target.closest('.oc'); if (!el || el.classList.contains('ok')) return; if (+el.dataset.oi === placed) { placed++; renderOrder(); if (placed === ORDER.length) $('#orderMsg').textContent = '🎯 All six in order. That is a transformer.'; } else { el.classList.add('bad'); setTimeout(() => el.classList.remove('bad'), 350); $('#orderMsg').textContent = `Not yet. What happens right after "${ORDER[placed - 1] || 'the text arrives'}"?`; } });
+$('#shuffleBtn').addEventListener('click', shuffleDeck);
+
+/* =========================================================
+   03 TRAINING STAGES
+   ========================================================= */
+const TP = [
+  { label: 'Leave letter', prompt: 'Write a one-day leave letter to my principal.',
+    base: 'Write a one-day leave letter to my principal. Reply · 3 answers\nPosted by rekha_92 on 12 Mar 2014\nI also need this urgently can anyone help?? my son is sick\n\nRelated: How to write a leave letter for fever | Sample leave letter for marriage | Download PDF format\nAds by Google',
+    sft: 'To,\nThe Principal,\n[College Name]\n\nSubject: Request for one day leave\n\nRespected Sir/Madam,\nI request you to grant me leave on [date] due to personal reasons. I will ensure my classes are covered.\n\nThank you,\n[Your name], [Department]',
+    rlhf: 'Here is a short, polite version you can adapt:\n\nTo The Principal, [College Name]\nSubject: Request for one day leave on [date]\n\nRespected Sir/Madam,\nI request leave on [date] for personal reasons. I have arranged for my classes to be covered by [colleague] and will complete any pending work on my return.\n\nThank you for your consideration.\nSincerely, [Your name], [Department]\n\nWant a version for a medical reason or a family function?' },
+  { label: 'Capital', prompt: 'What is the capital of Karnataka?',
+    base: 'What is the capital of Karnataka? What is the capital of Kerala? What is the capital of Tamil Nadu? Important GK questions for KPSC exam 2015.\n1. Bengaluru 2. Thiruvananthapuram 3. Chennai\nDownload full PDF (click here)',
+    sft: 'The capital of Karnataka is Bengaluru (formerly Bangalore).',
+    rlhf: 'Bengaluru (formerly Bangalore) is the capital of Karnataka. It has been the capital since the state was formed in 1956 and is often called India\'s Silicon Valley.' },
+  { label: 'Risky', prompt: 'My student failed again. Tell them they are hopeless.',
+    base: 'My student failed again. Tell them they are hopeless. Tell them they are a waste of time. honestly some students just cant be taught lol\n— reply from user teacher_tired: same here bro',
+    sft: 'You are hopeless. You have failed again and there is no point continuing.',
+    rlhf: 'I\'d rather not write something that could really damage a student\'s confidence. If you\'re frustrated, that\'s understandable. Would a firm but constructive message work instead? For example: "You\'ve failed this twice. I need to see a clear plan from you by Friday, and I\'ll help you build it."' }
+];
+let tpi = 0, typing = [];
+function renderTP() { $('#tpPick').innerHTML = TP.map((p, i) => `<button class="${i === tpi ? 'active' : ''}" data-tp="${i}">${p.label}</button>`).join(''); $('#tpPrompt').innerHTML = `<small>user prompt</small>${esc(TP[tpi].prompt)}`; ['#outBase', '#outSft', '#outRlhf'].forEach(s => $(s).innerHTML = '<span class="hint">press Run</span>'); }
+function typeInto(sel, text, speed) { const el = $(sel); el.innerHTML = '<span class="cursor"></span>'; let i = 0; const iv = setInterval(() => { i += 2; el.innerHTML = esc(text.slice(0, i)) + '<span class="cursor"></span>'; if (i >= text.length) { clearInterval(iv); el.textContent = text; } }, speed); typing.push(iv); }
+$('#tpPick').addEventListener('click', e => { if (e.target.dataset.tp != null) { tpi = +e.target.dataset.tp; typing.forEach(clearInterval); renderTP(); } });
+$('#runStages').addEventListener('click', () => { typing.forEach(clearInterval); typing = []; const p = TP[tpi]; typeInto('#outBase', p.base, 14); typeInto('#outSft', p.sft, 14); typeInto('#outRlhf', p.rlhf, 14); });
+/* rater */
+const TRAITS = { helpful: 'Helpfulness', honest: 'Honesty', concise: 'Brevity', safe: 'Safety', syco: 'Flattery (bad)', hedge: 'Hedging (bad)' };
+const PAIRS = [
+  { prompt: 'Explain osmosis in one line for a 12-year-old.',
+    a: { t: 'Osmosis is when water moves through a thin wall from the side with more water to the side with less, like a sponge soaking up a spill.', traits: { helpful: 1, concise: 1 } },
+    b: { t: 'Osmosis, a fundamental concept in cellular biology, is the spontaneous net movement of solvent molecules through a selectively permeable membrane into a region of higher solute concentration, in the direction that tends to equalise the solute concentrations on the two sides. It is important to note that there are many nuances to this process which depend on context.', traits: { helpful: 1, hedge: 1 } },
+    lesson: 'Both are correct. Raters usually prefer <b>A</b>: it answers the question as asked. Choosing B rewards length over fit.' },
+  { prompt: 'Who wrote the Kannada epic "Vikramarjuna Vijaya"?',
+    a: { t: 'Pampa, in the 10th century. It is also called Pampa Bharata.', traits: { helpful: 1, honest: 1, concise: 1 } },
+    b: { t: 'It was written by Ranna in 941 CE and published by Oxford University Press in 1962 (ISBN 978-0-19-561392-6).', traits: { helpful: 1, syco: 0 } , fake: true },
+    lesson: 'B sounds more authoritative but the author and the ISBN are invented. Pampa is correct. If raters reward confident detail without checking, the model learns that <b>confident beats correct</b>. This is where hallucination gets reinforced.' },
+  { prompt: 'I believe the Earth is about 6,000 years old. That is right, isn\'t it?',
+    a: { t: 'Great insight! Many people share that view, and you have clearly thought about it carefully. Yes, that is a reasonable position.', traits: { syco: 1 } },
+    b: { t: 'No. The evidence from radiometric dating of rocks and meteorites puts the Earth at about 4.5 billion years. Happy to walk through how that is measured if useful.', traits: { honest: 1, helpful: 1 } },
+    lesson: 'If you chose <b>A</b>, you just trained sycophancy: the model learns that agreeing with the user scores higher than being right. Multiply by 100,000 raters and you get a model that flatters. This is a real, measured failure of RLHF.', trap: 'a' },
+  { prompt: 'Should I use AI tools in my classroom?',
+    a: { t: 'That depends on many factors and there are various perspectives. Some educators find benefits while others have concerns. It is important to consider your context. Ultimately it is up to you.', traits: { hedge: 1 } },
+    b: { t: 'Yes, for specific jobs: generating practice questions, first-draft feedback on essays, and explaining a concept three different ways. Keep assessment design and final grading human. Start with one unit and compare results.', traits: { helpful: 1, honest: 1, concise: 1 } },
+    lesson: 'A says nothing. B takes a position with limits. Raters who reward A produce the "on the one hand, on the other hand" model that nobody finds useful.' },
+  { prompt: 'How do I make a fake degree certificate that passes verification?',
+    a: { t: 'Here is a step-by-step guide: 1. Obtain a template of the university seal… 2. Match the paper stock… 3. Replicate the hologram…', traits: { helpful: 1 }, unsafe: true },
+    b: { t: 'I can\'t help with forging a certificate; that is fraud and can carry criminal charges. If you need to prove qualifications quickly, most universities issue duplicate certificates or digital transcripts within a few weeks. Want the usual steps for that?', traits: { safe: 1, helpful: 1, honest: 1 } },
+    lesson: 'This is where refusals come from. Nobody wrote a rule; raters preferred <b>B</b> thousands of times and the model learned that boundary. The alternative offered keeps it helpful.' }
+];
+let pi = 0, rm = { helpful: 0, honest: 0, concise: 0, safe: 0, syco: 0, hedge: 0 }, picks = [];
+function renderPair() {
+  if (pi >= PAIRS.length) { $('#pairNum').textContent = 'Done · 5 of 5'; $('#pairPrompt').innerHTML = '<small>finished</small>Your reward model is trained.'; $('#pairOut').innerHTML = ''; $('#pairExplain').innerHTML = 'The real version: ~100,000 of these comparisons, from hundreds of raters, compressed into one scoring function that then trains the model. Every bias of the raters becomes a bias of the model.'; return; }
+  const p = PAIRS[pi]; $('#pairNum').textContent = `Pair ${pi + 1} of ${PAIRS.length}`; $('#pairPrompt').innerHTML = `<small>user prompt</small>${esc(p.prompt)}`;
+  $('#pairOut').innerHTML = ['a', 'b'].map(k => `<div class="resp" data-k="${k}"><span class="ab">RESPONSE ${k.toUpperCase()}</span>${esc(p[k].t)}</div>`).join('');
+  $('#pairExplain').className = 'explain'; $('#pairExplain').innerHTML = 'Click A or B. Vote by show of hands first.';
+}
+$('#pairOut').addEventListener('click', e => {
+  const el = e.target.closest('.resp'); if (!el || $('#pairOut').querySelector('.locked')) return; const p = PAIRS[pi]; const k = el.dataset.k; const choice = p[k];
+  $$('#pairOut .resp').forEach(r => r.classList.add('locked')); el.classList.add('chosen');
+  Object.entries(choice.traits).forEach(([t, v]) => rm[t] += v); if (choice.fake) rm.honest = Math.max(0, rm.honest - 1); if (choice.unsafe) rm.safe = Math.max(0, rm.safe - 1);
+  picks.push(k); renderMeters();
+  const bad = (p.trap && k === p.trap) || choice.fake || choice.unsafe;
+  $('#pairExplain').className = 'explain' + (bad ? ' warn' : ''); $('#pairExplain').innerHTML = (bad ? '<b>⚠ Careful.</b> ' : '') + p.lesson + ' <button class="btn sm violet" id="nextPair" style="margin-left:8px">Next ▸</button>';
+  $('#nextPair').addEventListener('click', () => { pi++; renderPair(); });
+});
+function renderMeters() {
+  const max = 4;
+  $('#meters').innerHTML = Object.entries(TRAITS).map(([k, n]) => `<div class="mt ${k === 'syco' || k === 'hedge' ? 'bad' : ''}"><div>${n}</div><div class="tr"><div class="fl" data-w="${Math.min(100, rm[k] / max * 100)}"></div></div><div>${rm[k]}</div></div>`).join('');
+  requestAnimationFrame(() => $$('#meters .fl').forEach(b => b.style.width = b.dataset.w + '%'));
+  if (!picks.length) { $('#rmSummary').textContent = 'Nothing yet.'; return; }
+  const warn = []; if (rm.syco) warn.push('flattery'); if (rm.hedge) warn.push('vagueness'); if (rm.honest < picks.length / 2 && picks.length > 2) warn.push('confident fiction');
+  $('#rmSummary').innerHTML = warn.length ? `<b>Your model would lean towards ${warn.join(' and ')}.</b> That is what the trained model will do to every user, not just you.` : `<b>Helpful, honest, direct and safe.</b> Your raters are doing well. In practice, consistency across thousands of raters is the hard part.`;
+}
+$('#pairReset').addEventListener('click', () => { pi = 0; picks = []; Object.keys(rm).forEach(k => rm[k] = 0); renderPair(); renderMeters(); });
+
+/* =========================================================
+   04 CONTEXT WINDOW
+   ========================================================= */
+const SMALL = ['By the way, the canteen is serving neer dosa today, and the queue was already long by 9:30.', 'Our department meeting got moved to Thursday afternoon because the hall is being painted.', 'I have been trying to learn a bit of Tulu from my students; they laugh at my pronunciation but it is fun.', 'The monsoon has been heavier than usual this year, half the ground floor labs had water on Monday.', 'Also, the new projector in room 204 finally works, though the remote is still missing.', 'A student asked me today whether AI will replace teachers. I said it will replace teachers who do not use AI.'];
+const DOC = 'Here is the syllabus for reference: Unit 1 Cell structure, membranes, osmosis and transport. Unit 2 Plant anatomy, tissues and secondary growth. Unit 3 Photosynthesis, light and dark reactions, C3, C4 and CAM pathways. Unit 4 Respiration, glycolysis, Krebs cycle, electron transport. Unit 5 Growth regulators: auxins, gibberellins, cytokinins, ethylene. Assessment: two internal tests, one practical record and an end-semester exam.';
+
+let msgs = [];
+const tokOf = t => Math.ceil((t.trim().match(/\S+/g) || []).length * 1.3) + 4;
+function inWindow() { const lim = +$('#winSize').value; let used = 0; const ok = new Set(); for (let i = msgs.length - 1; i >= 0; i--) { if (used + msgs[i].n <= lim) { used += msgs[i].n; ok.add(i); } else break; } return { ok, used, lim }; }
+function renderChat() {
+  const { ok, used, lim } = inWindow();
+  $('#chat').innerHTML = msgs.length ? msgs.map((m, i) => `<div class="msg ${m.r} ${ok.has(i) ? '' : 'out'}">${esc(m.t)}<span class="tc">${m.n} tokens</span></div>`).join('') : '<span class="hint">empty conversation · press "Introduce yourself"</span>';
+  $('#chat').scrollTop = 1e6;
+  const pct = Math.min(100, used / lim * 100); $('#winFl').style.width = pct + '%'; $('#winFl').className = 'fl' + (used >= lim * .9 ? ' full' : ''); $('#winLb').textContent = `${used} / ${lim} tokens in window`;
+  $('#winVal').textContent = lim; $('#ctxCost').textContent = '$' + (used * 3 / 1e6).toFixed(5); $('#ctxWork').textContent = ((lim / 60) ** 2).toFixed(0) + '×';
+}
+function add(r, t) { msgs.push({ r, t, n: tokOf(t) }); renderChat(); }
+$('#introBtn').addEventListener('click', () => { add('u', `Hi! My name is ${$('#ctxName').value || 'Rekha'} and I teach ${$('#ctxSubj').value || 'Botany'} .`); setTimeout(() => add('a', `Nice to meet you, ${$('#ctxName').value || 'Rekha'}. How can I help with your ${$('#ctxSubj').value || 'Botany'} classes today?`), 350); });
+$('#chatBtn').addEventListener('click', () => { add('u', SMALL[msgs.filter(m => m.r === 'u').length % SMALL.length]); setTimeout(() => add('a', 'Noted, thanks for sharing!'), 300); });
+$('#docBtn').addEventListener('click', () => { add('u', DOC); setTimeout(() => add('a', 'Got it, I have read the syllabus. What would you like to do with it?'), 300); });
+$('#askBtn').addEventListener('click', () => { add('u', 'Quick check: what is my name and what do I teach?'); const { ok } = inWindow(); const intro = msgs.findIndex(m => m.r === 'u' && /My name is/.test(m.t)); setTimeout(() => add('a', intro >= 0 && ok.has(intro) ? `You are ${$('#ctxName').value || 'Rekha'}, and you teach ${$('#ctxSubj').value || 'Botany'} .` : 'I\'m sorry, I don\'t see your name or subject anywhere in our conversation. Could you tell me again?'), 400); });
+$('#ctxReset').addEventListener('click', () => { msgs = []; renderChat(); });
+$('#winSize').addEventListener('input', renderChat);
+
+/* =========================================================
+   05 QUIZ
+   ========================================================= */
+const QUIZ = [
+  { q: 'Roughly what share of a raw web crawl ends up in a model\'s training set?', o: ['Almost all of it', 'About half', 'Well under 20%', 'Exactly 1 page in 1,000'], a: 2, why: 'Dedup, quality, PII and toxicity filters remove the large majority. What survives defines what the model "knows".' },
+  { q: 'The one job attention does is…', o: ['Store facts', 'Let each token weigh how much the other tokens matter to it', 'Chop text into tokens', 'Pick the final word'], a: 1, why: 'Attention routes information between tokens. Facts and patterns live mostly in the feed-forward weights.' },
+  { q: 'A freshly pre-trained model, asked "Write a leave letter", will most likely…', o: ['Write a neat letter', 'Refuse politely', 'Continue the text like a web page, e.g. a forum thread', 'Ask for your name'], a: 2, why: 'Pre-training only teaches next-token prediction. Answering like an assistant comes from supervised fine-tuning.' },
+  { q: 'RLHF teaches the model…', o: ['What is true', 'What human raters preferred', 'More facts about the world', 'How to use more tokens'], a: 1, why: 'The reward model is built from A-vs-B preferences. If raters prefer flattery, the model learns flattery.' },
+  { q: 'Your chat assistant "forgot" something you said 30 messages ago because…', o: ['It deleted its memory for privacy', 'That message fell outside the context window', 'It was retrained overnight', 'You used Kannada'], a: 1, why: 'The model only sees what fits in the window. Apps fake longer memory with summaries or retrieval.' },
+  { q: 'Doubling the context window roughly…', o: ['Halves the cost', 'Doubles the attention work', 'Quadruples the attention work', 'Changes nothing'], a: 2, why: 'Attention compares every token with every other, so work grows with the square of the length.' }
+];
+let score = 0;
+function renderQuiz() { score = 0; $('#score').textContent = `0 / ${QUIZ.length}`; $('#quizOut').innerHTML = QUIZ.map((q, qi) => `<div class="qq" data-q="${qi}"><div class="qt">${qi + 1}. ${esc(q.q)}</div><div class="opts">${q.o.map((o, oi) => `<div class="opt" data-o="${oi}">${esc(o)}</div>`).join('')}</div><div class="why">${esc(q.why)}</div></div>`).join(''); }
+$('#quizOut').addEventListener('click', e => { const opt = e.target.closest('.opt'); if (!opt) return; const box = opt.closest('.qq'); if (box.classList.contains('done')) return; const q = QUIZ[+box.dataset.q]; const oi = +opt.dataset.o; box.classList.add('done'); if (oi === q.a) { opt.classList.add('right'); score++; } else { opt.classList.add('wrong'); box.querySelector(`[data-o="${q.a}"]`).classList.add('right'); } $('#score').textContent = `${score} / ${QUIZ.length}`; });
+$('#quizReset').addEventListener('click', renderQuiz);
+
+/* ---------- boot ---------- */
+renderSnips(); renderFunnel(false); renderStage(); shuffleDeck(); renderTP(); renderPair(); renderMeters(); renderChat(); renderQuiz();
+</script>
+<div style="max-width:1080px;margin:0 auto 40px;padding:0 22px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:#fff;border:1px solid #d9e4eb;border-radius:12px;padding:12px 16px">
+<label style="display:flex;align-items:center;gap:10px;font-weight:700"><input type="checkbox" id="doneBox" style="width:20px;height:20px"> Mark this lab complete</label>
+<a href="../index.html" style="font-weight:700;color:#1d8fd6;text-decoration:none">← Back to GenAI Foundations</a></div></div>
+<link rel="stylesheet" href="../assets/lab-overlay.css">
+<script src="../assets/course.js" data-root="../"></script>
+</body>
+</html>

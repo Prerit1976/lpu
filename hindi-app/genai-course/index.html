@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GenAI Foundations · Poorit Technologies</title>
+<meta name="description" content="A practitioner-led Generative AI foundations course by Poorit Technologies: LLM basics, generation parameters, model landscape, prompt engineering, limitations and RAG, with three hands-on browser labs.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="home">
+
+<!-- ===== ACCESS GATE ===== -->
+<div class="gate" id="gate">
+  <div class="box">
+    <img class="logo" src="assets/poorit-mark.png" alt="Poorit Technologies">
+    <h1>GenAI Foundations</h1>
+    <p>A free practitioner course by <strong>Poorit Technologies</strong>. Follow us on LinkedIn to unlock all 9 modules.</p>
+
+    <div class="step" id="st1">
+      <div class="num">1</div>
+      <div class="txt"><strong>Follow Poorit Technologies</strong><small>Opens LinkedIn in a new tab. Click Follow, then come back.</small></div>
+      <a class="btn linkedin sm" id="btnCo" href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">Follow</a>
+    </div>
+    <div class="step" id="st2">
+      <div class="num">2</div>
+      <div class="txt"><strong>Connect with Prerit Chandra</strong><small>Founder &amp; CEO, Poorit Technologies. Follow or connect.</small></div>
+      <a class="btn linkedin sm" id="btnMe" href="https://www.linkedin.com/in/prerit-chandra/" target="_blank" rel="noopener">Connect</a>
+    </div>
+    <div class="step" id="st3">
+      <div class="num">3</div>
+      <div class="txt"><strong>Unlock the course</strong><small>Available once both links above have been visited.</small></div>
+      <button class="btn sm" id="btnUnlock" disabled>Unlock</button>
+    </div>
+    <div class="fine">© Poorit Technologies. Material is for personal online learning only and may not be copied, downloaded or redistributed. Unlock is remembered on this device.</div>
+  </div>
+</div>
+
+<!-- ===== COURSE HOME ===== -->
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="#modules">Modules</a><a href="#labs">Labs</a><a href="#about">About</a><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in ↗</a></nav>
+</div></div>
+
+<section class="hero"><div class="wrap">
+  <div class="kicker">Practitioner-led · Self-paced · Hands-on</div>
+  <h1>Generative AI Foundations: from tokens to RAG</h1>
+  <p>Six concise sessions and three interactive labs that take you from "what is a token?" to building grounded, safe, production-minded AI workflows. Written and taught by industry practitioners at Poorit Technologies.</p>
+  <div class="meta">
+    <div><div class="v">6</div><div class="k">sessions</div></div>
+    <div><div class="v">3</div><div class="k">browser labs</div></div>
+    <div><div class="v">~4 h</div><div class="k">total time</div></div>
+    <div><div class="v">0</div><div class="k">installs needed</div></div>
+  </div>
+</div></section>
+
+<main class="wrap">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Your progress</h2>
+      <span class="small" id="progTxt">0 / 9 modules complete</span>
+    </div>
+    <div class="progress"><div id="progBar"></div></div>
+    <div class="small">Progress is saved in this browser only. Tick "Mark module complete" at the end of each page.</div>
+  </div>
+
+  <div class="eyebrow" id="modules">Sessions</div>
+  <div class="modules">
+    <a class="mod" href="session1.html" data-id="s1"><div class="n">Session 01</div><div class="t">Basics, Building Blocks &amp; LLMs</div><div class="d">AI → ML → Deep Learning → GenAI → LLMs. Tokens, training vs inference, scaling laws, how an LLM is built.</div><div class="m">25 min</div></a>
+    <a class="mod" href="session2.html" data-id="s2"><div class="n">Session 02</div><div class="t">Generation Parameters &amp; Tools</div><div class="d">Temperature, Top-K, Top-P, max tokens, penalties, stop sequences and system prompts, with class demos.</div><div class="m">25 min</div></a>
+    <a class="mod" href="session3.html" data-id="s3"><div class="n">Session 03</div><div class="t">The LLM Landscape</div><div class="d">Open vs closed models, API vs self-hosted vs edge, and the cost, privacy and lock-in trade-offs.</div><div class="m">20 min</div></a>
+    <a class="mod" href="session4.html" data-id="s4"><div class="n">Session 04</div><div class="t">Prompt Engineering &amp; Injection</div><div class="d">The Gold Prompt, zero/few-shot and chain-of-thought, prompt injection, PII handling and API key hygiene.</div><div class="m">30 min</div></a>
+    <a class="mod" href="session5.html" data-id="s5"><div class="n">Session 05</div><div class="t">Limitations: Hallucination, Bias &amp; Context</div><div class="d">Types of hallucination, kinds of bias, AI vs human strengths, an agent that ran a shop, context windows.</div><div class="m">25 min</div></a>
+    <a class="mod" href="session6.html" data-id="s6"><div class="n">Session 06</div><div class="t">Retrieval-Augmented Generation</div><div class="d">Why RAG exists, the pipeline, three RAG patterns, and a runbook-assistant case study.</div><div class="m">20 min</div></a>
+  </div>
+
+  <div class="eyebrow" id="labs" style="margin-top:28px">Hands-on labs · run entirely in your browser</div>
+  <div class="modules">
+    <a class="mod lab" href="labs/llm-internals-lab.html" data-id="lab1"><div class="n">Lab A</div><div class="t">LLM Internals Lab</div><div class="d">Tokenize real text with a live tokenizer, see the token tax across languages, play with attention weightage and next-word sampling.</div><div class="m">40 min</div></a>
+    <a class="mod lab" href="labs/how-llms-are-built-lab.html" data-id="lab2"><div class="n">Lab B</div><div class="t">How LLMs Are Built Lab</div><div class="d">Curate a training set, walk through the transformer, play the SFT/RLHF rater game and watch a context window overflow.</div><div class="m">45 min</div></a>
+    <a class="mod lab" href="labs/ai-layers-quiz.html" data-id="lab3"><div class="n">Lab C</div><div class="t">Where Does This AI Belong?</div><div class="d">Classify 21 real applications into AI, ML, deep learning, GenAI, LLM, agents or classical software, then check your reasoning.</div><div class="m">20 min</div></a>
+  </div>
+
+  <div class="panel" id="about" style="margin-top:28px">
+    <h2>About this course</h2>
+    <div class="grid2">
+      <div>
+        <p>GenAI Foundations is the public, self-paced version of a programme Poorit Technologies delivers to engineering faculty, students and corporate teams. The emphasis is intuition first, jargon second, and everything is demonstrated rather than merely described.</p>
+        <p><strong>Who it is for:</strong> faculty, engineers, product and business teams who use AI tools daily and want to understand what is happening underneath.</p>
+      </div>
+      <div>
+        <p><strong>Poorit Technologies</strong> builds engineering and business capability for campuses and companies: practitioner-led training, Centres of Excellence and assessment through IntelliTest Hub.</p>
+        <div class="row"><a class="btn" href="https://poorit.in" target="_blank" rel="noopener">Visit poorit.in</a><a class="btn linkedin" href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. This material is provided for personal online learning and may not be copied, recorded, downloaded or redistributed without written permission.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/in/prerit-chandra/" target="_blank" rel="noopener">Prerit Chandra</a></div>
+</div></footer>
+
+<script src="assets/course.js" data-root=""></script>
+<script>
+(function(){
+  const gate=document.getElementById('gate');
+  const C=window.PooritCourse;
+  const params=new URLSearchParams(location.search);
+  const next=params.get('next');
+  if(C.isUnlocked()){ gate.remove(); if(next && /^(labs\/)?[\w-]+\.html$/.test(next)){ location.replace(next); return; } }
+  else {
+    const seen={co:false,me:false};
+    const refresh=()=>{ document.getElementById('st1').classList.toggle('ok',seen.co); document.getElementById('st2').classList.toggle('ok',seen.me);
+      const b=document.getElementById('btnUnlock'); b.disabled=!(seen.co&&seen.me); if(!b.disabled) document.getElementById('st3').classList.add('ok'); };
+    document.getElementById('btnCo').addEventListener('click',()=>{ setTimeout(()=>{seen.co=true;refresh();},800); });
+    document.getElementById('btnMe').addEventListener('click',()=>{ setTimeout(()=>{seen.me=true;refresh();},800); });
+    document.getElementById('btnUnlock').addEventListener('click',()=>{ C.unlock(); if(next && /^(labs\/)?[\w-]+\.html$/.test(next)){ location.replace(next); return; } gate.style.transition='opacity .35s'; gate.style.opacity='0'; setTimeout(()=>gate.remove(),360); });
+  }
+  /* progress */
+  const ids=['s1','s2','s3','s4','s5','s6','lab1','lab2','lab3'];
+  let n=0; ids.forEach(id=>{ const el=document.querySelector(`.mod[data-id="${id}"]`); if(C.isDone(id)){ n++; el&&el.classList.add('done'); } });
+  document.getElementById('progTxt').textContent=`${n} / ${ids.length} modules complete`;
+  document.getElementById('progBar').style.width=(n/ids.length*100)+'%';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 01 · Basics, Building Blocks & LLMs · GenAI Foundations · Poorit Technologies</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="s1">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="index.html">Home</a><a href="session1.html" class="active">01</a><a href="session2.html">02</a><a href="session3.html">03</a><a href="session4.html">04</a><a href="session5.html">05</a><a href="session6.html">06</a></nav>
+</div></div>
+<section class="hero"><div class="wrap">
+  <div class="kicker">Session 01 · 25 min</div>
+  <h1>Basics, Building Blocks & LLMs</h1>
+  <p>AI, ML, deep learning, generative AI and LLMs: how they nest, what a token is, how training differs from inference, and the recipe behind every modern LLM.</p>
+</div></section>
+<main class="wrap">
+<div class="panel">
+  <div class="eyebrow">01 · Warm-up</div>
+  <h2>Start with you</h2>
+  <p class="lead">Before any theory, three questions worth answering honestly. Write your answers down; you will revisit them in Session 5.</p>
+  <div class="grid3">
+    <div class="card"><strong>What do you do day to day?</strong>Teaching, coding, operations, sales, research? GenAI lands differently in each.</div>
+    <div class="card"><strong>Which AI tools have you already used?</strong>ChatGPT, Gemini, Claude, Copilot, NotebookLM, image or video generators?</div>
+    <div class="card"><strong>What would you automate tomorrow?</strong>Name one repetitive task. Keep it in mind as a running example.</div>
+  </div>
+  <div class="callout"><b>Key idea</b>Generative AI is <strong>reactive</strong>: it produces something only in response to an input. Text, images, video, audio, presentations, infographics, graphs, mind maps, flashcards, code. Nothing happens until you ask.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">02 · Landscape</div>
+  <h2>Six nested terms people use as if they were one</h2>
+  <div class="flow"><span class="node">AI</span><span class="arr">⊃</span><span class="node">ML</span><span class="arr">⊃</span><span class="node">Deep Learning</span><span class="arr">⊃</span><span class="node alt">Generative AI</span><span class="arr">⊃</span><span class="node alt">LLM</span><span class="arr">∋</span><span class="node alt">ChatGPT</span></div>
+  <table>
+    <tr><th style="width:170px">Term</th><th>One-line definition</th><th>Everyday example</th></tr>
+    <tr><td><strong>AI</strong></td><td>Making machines perform tasks that normally need human intelligence.</td><td>Route planning in a maps app</td></tr>
+    <tr><td><strong>Machine Learning</strong></td><td>A subset of AI. Machines learn patterns from data instead of following hand-written rules.</td><td>Spam filter, loan-risk score</td></tr>
+    <tr><td><strong>Deep Learning</strong></td><td>A subset of ML using neural networks with many layers.</td><td>Face unlock, speech-to-text</td></tr>
+    <tr><td><strong>Generative AI</strong></td><td>Models that move from <em>decide</em> to <em>create</em>: they produce new content.</td><td>Image generators, music tools</td></tr>
+    <tr><td><strong>LLM</strong></td><td>A specialised form of generative AI focused on language.</td><td>GPT, Claude, Gemini, Llama</td></tr>
+    <tr><td><strong>ChatGPT</strong></td><td>One product: an LLM plus a chat interface.</td><td>ChatGPT = LLM + interface</td></tr>
+  </table>
+  <div class="callout warn"><b>Common misconception</b>AI does not revolve around GenAI. Optimisation, simulation, rules and heuristics, graph methods and non-generative machine learning are all AI, and most production AI in banks, logistics and healthcare is still non-generative. Generative models are one practice among many.</div>
+  <div class="activity"><b class="lbl">Try it · 3 min</b>Classify these in the table above: a chess engine, Netflix recommendations, a chatbot writing your email, a camera detecting a cat, a thermostat schedule. Discuss where boundaries blur. Lab C at the end of the course makes a full game of this.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">03 · Tokens</div>
+  <h2>A token is not a word</h2>
+  <p>A token is the small unit of text a model reads and generates. Common words are often one token; longer or rarer words are split into pieces, and every piece maps to a number.</p>
+  <div class="grid2">
+    <div class="card"><strong>darkness → "dark" + "ness"</strong>Two tokens, say 217 and 655.</div>
+    <div class="card"><strong>brightness → "bright" + "ness"</strong>Two tokens, say 491 and 655. Notice "ness" reuses the same id.</div>
+  </div>
+  <p style="margin-top:12px">Ambiguity is handled by context during training. The word <em>lie</em> (to rest) and <em>lie</em> (an untruth) are learned as different uses because the surrounding tokens differ.</p>
+  <div class="grid2">
+    <div class="callout good"><b>Rule of thumb (English)</b>1 token ≈ 4 characters.<br>100 tokens ≈ 75 words.</div>
+    <div class="callout"><b>Why you should care</b>You are billed per token, context limits are in tokens, and non-English scripts often cost 3 to 10 times more tokens for the same meaning. Lab A measures this live.</div>
+  </div>
+  <div class="activity"><b class="lbl">Try it · 5 min</b>Open any public tokenizer playground (for example the OpenAI tokenizer) and paste: your name, a sentence in English, the same sentence in Hindi or Kannada, and a line of code. Count the tokens for each. Which surprised you?</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">04 · Training vs inference</div>
+  <h2>Two very different phases</h2>
+  <div class="grid2">
+    <div class="card"><strong>Training</strong>The model learns to perform a task by adjusting its weights against a huge set of training data, over many iterations, until accuracy is high. Happens once (or occasionally), costs millions, needs thousands of GPUs.</div>
+    <div class="card"><strong>Inference</strong>A trained model generates new outputs by applying what it learned to new input in real time. Happens every time you send a prompt. Cheap per call, but it is where your cost scales.</div>
+  </div>
+  <h3>Scaling laws: why bigger kept getting better</h3>
+  <p>Researchers found that test loss (how wrong the model is on unseen data) falls smoothly and predictably as you increase any of three things: compute, dataset size, or parameter count. Lower loss means better generalisation. This is why the last five years were a race for scale.</p>
+  <svg viewBox="0 0 720 220" width="100%" role="img" aria-label="Three charts showing test loss falling as compute, dataset size and parameters increase" style="max-width:720px;display:block;margin:8px auto 4px">
+    <g font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#5b6f80">
+    <g transform="translate(10,10)"><rect width="220" height="180" rx="10" fill="#f0f6fa" stroke="#d9e4eb"/><polyline points="30,40 60,70 95,98 130,120 165,138 200,150" fill="none" stroke="#1d8fd6" stroke-width="3"/><text x="110" y="172" text-anchor="middle">Compute →</text><text x="14" y="30" font-size="11">Test loss</text></g>
+    <g transform="translate(250,10)"><rect width="220" height="180" rx="10" fill="#f0f6fa" stroke="#d9e4eb"/><polyline points="30,45 60,72 95,97 130,118 165,136 200,150" fill="none" stroke="#1d8fd6" stroke-width="3"/><text x="110" y="172" text-anchor="middle">Dataset size (tokens) →</text><text x="14" y="30" font-size="11">Test loss</text></g>
+    <g transform="translate(490,10)"><rect width="220" height="180" rx="10" fill="#f0f6fa" stroke="#d9e4eb"/><polyline points="30,42 60,70 95,96 130,117 165,135 200,150" fill="none" stroke="#1d8fd6" stroke-width="3"/><text x="110" y="172" text-anchor="middle">Parameters →</text><text x="14" y="30" font-size="11">Test loss</text></g>
+    </g>
+  </svg>
+  <p class="small" style="text-align:center">Schematic. Y-axis is test loss on all three; the downward slope is improvement. Axes are logarithmic in the original research.</p>
+  <div class="callout"><b>Beyond text</b>The same learning machinery is used outside chatbots. In healthcare, models trained on records can forecast disease progression, and synthetic data is used to predict health issues where real data is scarce or sensitive.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">05 · How an LLM is built</div>
+  <h2>The five-stage recipe</h2>
+  <ol>
+    <li><strong>Data curation.</strong> Collect at web scale, then remove duplicates, run safety checks, keep humans in the loop for quality decisions.</li>
+    <li><strong>Tokenisation and weights.</strong> Convert text to tokens; the model's knowledge lives in billions of numeric weights.</li>
+    <li><strong>Model architecture.</strong> The transformer, built around <em>attention</em>: the mechanism that lets "bank" in "river bank" and "bank" in "money withdrawal at the bank" get different meanings. Position embeddings tell the model word order.</li>
+    <li><strong>Training.</strong> Pre-training (predict the next token on everything), mid-training, supervised fine-tuning (good examples), preference fine-tuning (human raters pick better answers), reinforcement learning with verifiable rewards (maths, code, logic).</li>
+    <li><strong>Evaluation and benchmarking.</strong> Measure on held-out tests before shipping.</li>
+  </ol>
+  <h3>Reading technique: why the transformer won</h3>
+  <div class="grid2">
+    <div class="card"><strong>Old approach (RNN)</strong><span class="mono">word → word → word → word</span><br>Reads one word at a time, forgets early context, cannot be parallelised. 😓</div>
+    <div class="card"><strong>Transformer</strong><span class="mono">[word word word word]</span><br>Reads the whole sequence at once and lets every word attend to every other. Fast on GPUs, long memory. 😎</div>
+  </div>
+  <p style="margin-top:12px"><strong>Transformer = how AI reads. LLM = a transformer trained at scale.</strong></p>
+  <table>
+    <tr><th>Concept</th><th>Analogy</th></tr>
+    <tr><td>Transformer</td><td>A reading technique</td></tr>
+    <tr><td>Tokens</td><td>Words or syllables</td></tr>
+    <tr><td>Self-attention</td><td>Highlighting the important lines</td></tr>
+    <tr><td>Training</td><td>Reading millions of books</td></tr>
+    <tr><td>LLM</td><td>A very knowledgeable reader</td></tr>
+    <tr><td>Prompt</td><td>The question you ask</td></tr>
+    <tr><td>Output</td><td>The answer generated</td></tr>
+  </table>
+  <div class="callout"><b>Reasoning models</b>Newer "reasoning" models perform multiple passes to work through complex problems before answering, trading speed for higher accuracy and explainability.</div>
+  <div class="activity"><b class="lbl">Discuss · 5 min</b>Every note in AI-generated music is generated, yet new music keeps coming out of these systems. Is that original? Where does your answer put the line between remix and creativity? Keep your position; Session 5 returns to it with data.</div>
+  <div class="callout good"><b>Go deeper</b>Lab A (LLM Internals) and Lab B (How LLMs Are Built) turn every idea on this page into something you can poke at in the browser.</div>
+</div>
+
+<div class="module-done"><input type="checkbox" id="doneBox"><label for="doneBox"><strong>Mark module complete</strong> <span class="small">· saved in this browser</span></label></div>
+<div class="pager"><a class="btn secondary" href="index.html">← Course home</a><a class="btn" href="session2.html">Session 02: Generation Parameters & Tools →</a></div>
+</main>
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. For personal online learning only; copying, recording, downloading or redistribution is not permitted.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+</div></footer>
+<script src="assets/course.js" data-root=""></script>
+</body>
+</html>
