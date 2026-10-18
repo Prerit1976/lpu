@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 04 · Prompt Engineering & Injection · GenAI Foundations · Poorit Technologies</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="s4">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="index.html">Home</a><a href="session1.html">01</a><a href="session2.html">02</a><a href="session3.html">03</a><a href="session4.html" class="active">04</a><a href="session5.html">05</a><a href="session6.html">06</a></nav>
+</div></div>
+<section class="hero"><div class="wrap">
+  <div class="kicker">Session 04 · 30 min</div>
+  <h1>Prompt Engineering & Injection</h1>
+  <p>A repeatable prompt structure, when chain-of-thought helps, how prompt injection works, and how to keep PII and API keys out of harm's way.</p>
+</div></section>
+<main class="wrap">
+<div class="panel">
+  <div class="eyebrow">1 · Context is king</div>
+  <h2>Role-based prompting and the CLEAR framework</h2>
+  <p class="lead">A model can only be as precise as the brief you give it. Five ingredients turn a vague request into a reliable one.</p>
+  <table>
+    <tr><th style="width:150px">Ingredient</th><th>Example</th></tr>
+    <tr><td><strong>C</strong>ontext</td><td>"This is for a SaaS company handling financial data."</td></tr>
+    <tr><td><strong>L</strong>ogic</td><td>"Think step by step before answering."</td></tr>
+    <tr><td><strong>E</strong>xplicitness</td><td>"Explain OAuth 2.0 for backend engineers in under 150 words."</td></tr>
+    <tr><td><strong>A</strong>lignment</td><td>"Do not expose secrets or real tokens."</td></tr>
+    <tr><td><strong>R</strong>esponse format</td><td>"Bullet points with one real-world example."</td></tr>
+  </table>
+  <div class="callout"><b>Many frameworks, one idea</b>You will see acronyms such as RACE, CARE, APE, ROSES, CREATE, TAG, COAST, PAIN, RISE and CREO. They all re-package the same five ingredients: who the model is, what it knows, what to do, within which limits, in what shape. Learn the ingredients, not the acronyms.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">2 · The Gold Prompt</div>
+  <h2>One template that covers most real work</h2>
+  <pre>Role:           You are an expert in &lt;domain&gt;.
+Context:        &lt;relevant background information&gt;
+Task:           &lt;clear and specific instruction&gt;
+Constraints:    &lt;any limits or rules&gt;
+Output Format:  &lt;exact structure required&gt;</pre>
+  <div class="activity"><b class="lbl">Try it · 5 min</b>Rewrite your most-used prompt into the five slots. Run both versions side by side. Count how many follow-up messages each one needed.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">3 · Techniques</div>
+  <h2>Zero-shot, few-shot and chain-of-thought</h2>
+  <table>
+    <tr><th>Prompt type</th><th>Examples given</th><th>Reasoning shown</th><th>Best for</th><th>Risk</th></tr>
+    <tr><td>Zero-shot</td><td>0</td><td>No</td><td>Simple tasks</td><td>Ambiguity</td></tr>
+    <tr><td>One-shot</td><td>1</td><td>No</td><td>Introducing a pattern</td><td>Limited learning</td></tr>
+    <tr><td>Few-shot</td><td>2 to 5</td><td>No</td><td>Classification, formatting</td><td>Token usage</td></tr>
+    <tr><td>Many-shot</td><td>10+</td><td>No</td><td>Rare domains</td><td>Cost, context limit</td></tr>
+    <tr><td>Zero-shot CoT</td><td>0</td><td>Yes</td><td>Maths, logic</td><td>Verbose</td></tr>
+    <tr><td>Few-shot CoT</td><td>2 to 3</td><td>Yes</td><td>Complex reasoning</td><td>Information exposure</td></tr>
+  </table>
+  <blockquote class="callout" style="font-style:italic">"Chain-of-Thought turns LLMs from guessers into reasoners."</blockquote>
+  <div class="grid2">
+    <div class="card"><strong>CoT helps</strong><span class="tag on">Maths / logic</span><span class="tag on">System design</span><span class="tag on">Security analysis</span></div>
+    <div class="card"><strong>CoT adds little</strong><span class="tag off">Fact lookup</span><span class="tag off">Summarisation</span></div>
+  </div>
+  <div class="activity"><b class="lbl">Class demo</b><span class="mono">If a train leaves City A at 9 AM at 60 km/h and another leaves City B at 10 AM at 80 km/h, which reaches first?</span><br>Ask plainly, then add "think step by step". Notice that the second answer asks for the missing distance instead of guessing. That is the value of reasoning: it surfaces what is under-specified.</div>
+  <h3>Decomposition</h3>
+  <p>Break big tasks into smaller prompts. "Write the report" becomes outline → section drafts → consistency pass → executive summary. Each step is easier to verify and cheaper to retry.</p>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">4 · Prompt injection</div>
+  <h2>When input becomes instruction</h2>
+  <p>Prompt injection happens when user input overrides or manipulates the system instructions, causing the model to leak internal prompts, ignore safety rules, expose sensitive data or perform unintended actions. The root cause: the model treats everything in its context as potential instruction.</p>
+  <div class="grid3">
+    <div class="card"><strong>The "grandmother" trick</strong>Wrapping a forbidden request in a role-play ("my late grandmother used to read me…") to slip past refusals.</div>
+    <div class="card"><strong>Jailbreaks</strong>Long preambles that "pump up" the model into a persona with no rules.</div>
+    <div class="card"><strong>The $1 car</strong>A dealership chatbot talked into agreeing to sell a vehicle for a dollar, "no takesies backsies". A real incident and a real lesson about giving bots authority.</div>
+  </div>
+  <div class="callout warn"><b>Defence principle</b><strong>Treat user input as data, not instructions.</strong> Separate it clearly, validate outputs, never give the model authority it does not need, and assume any text it reads (web pages, documents, emails) can contain an attack.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">5 · Data protection</div>
+  <h2>Keeping PII out of the model</h2>
+  <p>LLMs remember context during a session, may log inputs for debugging, and can accidentally leak data in responses. So:</p>
+  <h3>Mask or remove sensitive data before sending</h3>
+  <pre>Original: "My Aadhaar is 123456789012"
+To LLM:   "My Aadhaar is XXXXXXXXXXXX"</pre>
+  <h3>Use data classification</h3>
+  <p>Tag data as <span class="tag">Public</span><span class="tag">Internal</span><span class="tag off">Confidential</span><span class="tag off">Restricted</span>. Models should receive only Public or sanitised Internal data.</p>
+  <div class="grid2">
+    <div class="callout good"><b>Post-processing redaction</b>Scan model output for email patterns, long numbers, patient IDs. Redact before showing users.</div>
+    <div class="callout good"><b>Zero-retention APIs</b>Prefer providers that offer no training on your data and short-lived logs.</div>
+  </div>
+  <blockquote class="callout" style="font-style:italic">"If you don't need the data for reasoning, don't send it to the model."</blockquote>
+  <p class="small">Practitioner note: for analytics on HR records in a client engagement, we generated fully synthetic data with the same statistical shape rather than sending a single real record to a model.</p>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">6 · Secrets</div>
+  <h2>Safe API key management</h2>
+  <p>AI API keys are high-value secrets: they spend your money and can expose your data.</p>
+  <div class="grid3">
+    <div class="callout bad"><b>Mistake</b>Hard-coding keys in source code.</div>
+    <div class="callout bad"><b>Mistake</b>Committing keys to Git, even once.</div>
+    <div class="callout bad"><b>Mistake</b>Exposing keys in frontend apps where anyone can read them.</div>
+  </div>
+  <p><strong>Do instead:</strong> keep keys in environment variables or a secrets manager, call providers from a backend you control, rotate keys on a schedule, set spend limits, and scan repositories for leaked secrets in CI.</p>
+  <div class="activity"><b class="lbl">Homework · 20 min</b>Build a one-page "AI usage policy" for your team: what data may be pasted into public tools, which tools are approved, and who owns the API keys.</div>
+</div>
+
+<div class="module-done"><input type="checkbox" id="doneBox"><label for="doneBox"><strong>Mark module complete</strong> <span class="small">· saved in this browser</span></label></div>
+<div class="pager"><a class="btn secondary" href="session3.html">← Session 03: The LLM Landscape</a><a class="btn" href="session5.html">Session 05: Limitations: Hallucination, Bias & Context →</a></div>
+</main>
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. For personal online learning only; copying, recording, downloading or redistribution is not permitted.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+</div></footer>
+<script src="assets/course.js" data-root=""></script>
+</body>
+</html>

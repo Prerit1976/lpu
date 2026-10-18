@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="../assets/poorit-mark.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interactive AI layers classification quiz for faculty development.">
+<title>Where Does This AI Application Belong? | Poorit Technologies</title>
+<style>
+:root{--navy:#103b50;--blue:#176b87;--cyan:#dff4fb;--ink:#172b3a;--muted:#617384;--line:#d9e4eb;--bg:#f4f8fb;--white:#fff;--green:#147d52;--red:#b93838;--gold:#8a5a00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:linear-gradient(120deg,var(--navy),var(--blue));color:#fff;padding:32px 20px}
+.wrap{max-width:1000px;margin:auto}header h1{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.12;margin:0 0 12px}header p{max-width:760px;margin:0;color:#e5f5fa}
+main{max-width:1000px;margin:24px auto;padding:0 16px 48px}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 16px #17394b0a}
+h2{font-size:1.3rem;margin:0 0 12px}h3{font-size:1.05rem;margin:0 0 8px}.instructions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.instruction{background:#f1f7fa;border-radius:12px;padding:12px}
+.toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.progress{height:8px;background:#e7eef3;border-radius:99px;overflow:hidden;margin:14px 0}.progress>div{height:100%;width:0;background:#2384a6;transition:width .2s}
+.small{color:var(--muted);font-size:.92rem}.counter{font-weight:700;color:var(--blue)}.question{border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}.qhead{display:flex;gap:12px;align-items:flex-start}.num{display:inline-flex;align-items:center;justify-content:center;flex:0 0 34px;height:34px;background:var(--cyan);color:var(--navy);font-weight:800;border-radius:10px}.qtext{font-weight:650;margin:3px 0 12px}
+select{width:100%;max-width:520px;border:1px solid #bdcbd5;border-radius:9px;padding:11px;background:#fff;color:var(--ink);font:inherit}
+.feedback{margin-top:12px;padding:12px;border-radius:10px;background:#f3f7fa;border-left:4px solid #8da8b8}.feedback.correct{border-color:var(--green);background:#edf9f2}.feedback.review{border-color:var(--gold);background:#fff8e8}
+button{font:inherit;font-weight:650;border:0;border-radius:10px;padding:11px 16px;cursor:pointer;background:var(--blue);color:#fff}button.secondary{background:#e8f1f5;color:var(--navy)}button.outline{background:#fff;color:var(--blue);border:1px solid #9cbac8}button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.score{font-size:1.5rem;font-weight:800;color:var(--navy)}.hidden{display:none!important}.layer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.layer{border:1px solid var(--line);border-radius:12px;padding:13px}.layer strong{display:block;color:var(--navy);margin-bottom:4px}footer{text-align:center;color:var(--muted);font-size:.9rem;padding:18px}
+@media(max-width:600px){header{padding:26px 18px}.panel{padding:15px}.toolbar{align-items:flex-start}}
+</style>
+</head>
+<body data-page="lab3">
+<header><div class="wrap">
+  <a href="../index.html" style="color:#cfe4f3;text-decoration:none;font-size:.9rem;display:inline-flex;align-items:center;gap:8px;margin-bottom:14px"><img src="../assets/poorit-mark.png" alt="" style="width:26px;height:26px;border-radius:7px;pointer-events:none">← Poorit Technologies · GenAI Foundations</a>
+  <div style="font-weight:750;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;margin-bottom:12px">Lab C · GenAI Foundations</div>
+  <h1>Where Does This AI Application Belong?</h1>
+  <p>An interactive classification challenge by Poorit Technologies. Classify 21 practical examples, check your answers, and learn why each category fits.</p>
+</div></header>
+<main>
+<section class="panel">
+<h2>How to play</h2>
+<div class="instructions">
+ <div class="instruction"><strong>1. Work in teams</strong><br><span class="small">Solo, or in groups of 3–5.</span></div>
+ <div class="instruction"><strong>2. Classify</strong><br><span class="small">Choose the best primary category for each example.</span></div>
+ <div class="instruction"><strong>3. Explain why</strong><br><span class="small">Discuss the technology or task behind your choice.</span></div>
+ <div class="instruction"><strong>4. Reveal and review</strong><br><span class="small">Check the suggested answer and explanation.</span></div>
+</div>
+<p class="small"><strong>Facilitator note:</strong> Categories can overlap. Choose the primary category based on the description, then discuss other valid layers where relevant.</p>
+</section>
+
+<section class="panel">
+<div class="toolbar"><div><h2 style="margin-bottom:3px">Your classification worksheet</h2><div class="small">Your selections stay in this browser page; nothing is sent to a server.</div></div><div class="counter" id="answered">0 / 21 answered</div></div>
+<div class="progress" aria-label="Completion progress"><div id="progressBar"></div></div>
+<div id="questions"></div>
+<div class="actions">
+<button id="revealBtn">Reveal answers & explanations</button>
+<button id="hideBtn" class="secondary hidden">Hide explanations</button>
+<button id="scoreBtn" class="outline">Show score</button>
+<button id="resetBtn" class="secondary">Reset activity</button>
+</div>
+<div id="scorePanel" class="feedback hidden" aria-live="polite"></div>
+</section>
+
+<section class="panel">
+<h2>Quick reference: the seven teaching categories</h2>
+<div class="layer-grid">
+<div class="layer"><strong>1. Artificial Intelligence (AI)</strong><span class="small">The broad field of systems performing tasks associated with intelligence.</span></div>
+<div class="layer"><strong>2. Machine Learning (ML)</strong><span class="small">Learns patterns from data for prediction, classification or recommendations.</span></div>
+<div class="layer"><strong>3. Deep Learning</strong><span class="small">Uses multi-layer neural networks to learn complex patterns.</span></div>
+<div class="layer"><strong>4. Generative AI</strong><span class="small">Creates new content such as text, images, audio, video or code.</span></div>
+<div class="layer"><strong>5. Large Language Model (LLM)</strong><span class="small">A model trained to process and generate language.</span></div>
+<div class="layer"><strong>6. ChatGPT</strong><span class="small">A specific AI product/interface that may use LLMs and generative AI.</span></div>
+<div class="layer"><strong>7. AI Agent</strong><span class="small">A system designed to pursue goals through multiple steps, tools and actions under permissions.</span></div>
+</div>
+<p class="small"><strong>Important:</strong> These are not seven strictly nested technical layers. ChatGPT is a product, while AI agents are a system-design approach. A real application can fit several categories.</p>
+</section>
+<footer>© Poorit Technologies LLP · GenAI Foundations · for personal online learning only</footer>
+</main>
+<script>
+const categories = [
+"Artificial Intelligence (AI)","Machine Learning (ML)","Deep Learning",
+"Generative AI","Large Language Model (LLM)","ChatGPT","AI Agent"
+];
+const items = [
+{task:"A university chatbot routes student queries to the admissions, examination or accounts department.",answer:0,why:"AI is the broad field. The system performs an intelligent routing task; its implementation could use rules, ML or an LLM.",also:"Depending on how it is built, it may also use ML, an LLM or an agent workflow."},
+{task:"A system predicts which students may need academic support using attendance and previous examination marks.",answer:1,why:"The primary task is learning patterns from historical data to predict a future outcome.",also:"Such predictions should be reviewed carefully and should not be the sole basis for high-stakes decisions about students."},
+{task:"A neural network recognises handwritten mathematical symbols in scanned examination scripts.",answer:2,why:"The example specifically uses a neural network to recognise complex visual patterns.",also:"It is also AI and ML; deep learning is the most specific category here."},
+{task:"A tool creates a new infographic explaining the water cycle from a text description.",answer:3,why:"The system generates new visual content rather than simply classifying existing images.",also:"It may use a generative image model, which could be based on deep learning."},
+{task:"A language model explains a complex economics concept in simple language for undergraduate students.",answer:4,why:"The core capability is processing and generating language.",also:"It is also generative AI if it creates a new explanation, and it might be accessed through ChatGPT or another product."},
+{task:"A professor uploads a syllabus to ChatGPT and asks it to create a weekly teaching plan.",answer:5,why:"The example identifies a particular product and its use.",also:"The underlying capability may involve an LLM and generative AI; uploading a file alone does not make it an agent."},
+{task:"An academic support system checks an approved FAQ, drafts a response and escalates unanswered questions to staff.",answer:6,why:"If it coordinates multiple steps and uses tools or actions to pursue a goal, it fits an agent workflow.",also:"A simple scripted workflow may not be an AI agent. The system design matters."},
+{task:"A system forecasts next year's student enrolment from several years of admission data.",answer:1,why:"It uses historical data to estimate a future value.",also:"Statistical forecasting or optimisation methods may also be suitable; not every forecast necessarily uses ML."},
+{task:"A neural network identifies defects in images captured during a mechanical engineering laboratory exercise.",answer:2,why:"The focus is recognising complex visual patterns using a neural network.",also:"It is also AI and ML; the more specific category is deep learning."},
+{task:"A tool creates a narrated explainer video for a difficult science topic.",answer:3,why:"The main outcome is newly generated media, potentially combining text, images, speech and video.",also:"Several generative models or services may be combined in one workflow."},
+{task:"A language model generates case-study questions, model answers and marking criteria from a topic.",answer:4,why:"The primary capability is language-based content generation.",also:"This is also generative AI. An LLM is the more specific model category in this example."},
+{task:"A faculty member uses ChatGPT to conduct a mock viva and receive feedback on their answers.",answer:5,why:"The example explicitly names the product.",also:"Its conversational capabilities are powered by underlying AI models; feedback should be treated as advisory."},
+{task:"A research assistant searches approved sources, compares evidence and prepares a cited brief for faculty review.",answer:6,why:"When configured to plan and execute multiple steps using search tools, it fits the agent category.",also:"If it only answers a single prompt without planning or taking tool actions, it may simply be an LLM-based workflow. Verify every citation."},
+{task:"A model predicts whether a student is at low, medium or high risk based on past academic records.",answer:1,why:"This is a classification task using patterns in data.",also:"It does not inherently require generative AI. Use privacy safeguards and human review."},
+{task:"A neural network converts recorded lectures into text using speech recognition.",answer:2,why:"Modern speech-recognition systems commonly use deep neural networks to map audio to text.",also:"This is also AI and ML; some speech systems use additional language models."},
+{task:"A tool generates a Python program demonstrating a sorting algorithm from a natural-language request.",answer:3,why:"The defining task is creating new code.",also:"An LLM may be the model that performs the generation, so LLM is also a valid underlying-model description."},
+{task:"A language model reviews a research abstract for clarity, structure and missing arguments.",answer:4,why:"The system processes and evaluates natural language.",also:"This may also be generative AI if it proposes revised text. Academic judgement remains essential."},
+{task:"A professor uses ChatGPT to draft an assessment rubric and sample feedback for student assignments.",answer:5,why:"The named product is ChatGPT.",also:"The task also uses LLM and generative AI capabilities. Review rubrics for fairness and alignment with learning outcomes."},
+{task:"A system allocates classrooms and time slots while respecting room capacity and timetable constraints.",answer:0,why:"It is an intelligent scheduling or optimisation problem, which fits the broad AI category for this exercise.",also:"It may be solved with mathematical optimisation and need not use machine learning."},
+{task:"A system generates new practice questions from an uploaded chapter.",answer:3,why:"It creates new content from supplied material.",also:"An LLM may be used, but generation is the clearest task category. Check questions against the source chapter."},
+{task:"A digital assistant checks a syllabus, drafts lesson materials and proposes a quiz for the instructor to approve.",answer:6,why:"If it coordinates multiple steps and tools toward the preparation goal, it fits an agent workflow.",also:"A simple one-shot chatbot can perform some of these tasks without being an agent; look for goal-directed multi-step action."}
+];
+const chosen = {};
+let revealed = false;
+const root = document.getElementById("questions");
+const esc = s => s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function render(){
+ root.innerHTML = items.map((it,i)=>`
+ <article class="question">
+  <div class="qhead"><span class="num">${i+1}</span><div style="flex:1">
+   <div class="qtext">${esc(it.task)}</div>
+   <label class="small" for="answer-${i}">Which is the best primary category?</label><br>
+   <select id="answer-${i}" data-index="${i}">
+    <option value="">Choose a category…</option>
+    ${categories.map((c,j)=>`<option value="${j}" ${chosen[i]===j?"selected":""}>${esc(c)}</option>`).join("")}
+   </select>
+   <div id="feedback-${i}" class="feedback ${revealed?"":"hidden"}" aria-live="polite"></div>
+  </div></div>
+ </article>`).join("");
+ root.querySelectorAll("select").forEach(sel=>sel.addEventListener("change",e=>{
+   const i=Number(e.target.dataset.index);
+   if(e.target.value==="") delete chosen[i]; else chosen[i]=Number(e.target.value);
+   updateProgress();
+   if(revealed) renderFeedback(i);
+   document.getElementById("scorePanel").classList.add("hidden");
+ }));
+ if(revealed) items.forEach((_,i)=>renderFeedback(i));
+ updateProgress();
+}
+function renderFeedback(i){
+ const el=document.getElementById(`feedback-${i}`); if(!el)return;
+ const it=items[i], val=chosen[i];
+ el.classList.remove("hidden","correct","review");
+ if(val===undefined){el.classList.add("review");el.innerHTML=`<strong>Suggested answer: ${categories[it.answer]}</strong><br>${esc(it.why)}<br><span class="small"><strong>Further discussion:</strong> ${esc(it.also)}</span>`;return;}
+ const exact=val===it.answer;
+ el.classList.add(exact?"correct":"review");
+ el.innerHTML=`<strong>${exact?"Your answer matches the suggested primary category.":"Suggested primary category: "+categories[it.answer]}</strong><br>${esc(it.why)}<br><span class="small"><strong>Overlap to discuss:</strong> ${esc(it.also)}</span>`;
+}
+function updateProgress(){
+ const n=Object.keys(chosen).length;
+ document.getElementById("answered").textContent=`${n} / ${items.length} answered`;
+ document.getElementById("progressBar").style.width=`${n/items.length*100}%`;
+}
+document.getElementById("revealBtn").addEventListener("click",()=>{
+ revealed=true; document.getElementById("revealBtn").classList.add("hidden");
+ document.getElementById("hideBtn").classList.remove("hidden"); render();
+});
+document.getElementById("hideBtn").addEventListener("click",()=>{
+ revealed=false; document.getElementById("hideBtn").classList.add("hidden");
+ document.getElementById("revealBtn").classList.remove("hidden"); render();
+});
+document.getElementById("scoreBtn").addEventListener("click",()=>{
+ const answered=Object.keys(chosen).length;
+ const matches=items.filter((it,i)=>chosen[i]===it.answer).length;
+ const panel=document.getElementById("scorePanel");
+ panel.classList.remove("hidden");
+ panel.innerHTML=`<div class="score">${matches} / ${answered} exact matches</div><div>${answered===0?"Select some categories first.":`You have answered ${answered} of ${items.length} examples. This score checks the suggested primary category; a different answer may still be defensible when explained well.`}</div>`;
+});
+document.getElementById("resetBtn").addEventListener("click",()=>{
+ for(const k of Object.keys(chosen))delete chosen[k];
+ revealed=false;
+ document.getElementById("revealBtn").classList.remove("hidden");
+ document.getElementById("hideBtn").classList.add("hidden");
+ document.getElementById("scorePanel").classList.add("hidden");
+ render();
+});
+render();
+</script>
+<div style="max-width:1000px;margin:0 auto 40px;padding:0 16px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:#fff;border:1px solid #d9e4eb;border-radius:12px;padding:12px 16px">
+<label style="display:flex;align-items:center;gap:10px;font-weight:700"><input type="checkbox" id="doneBox" style="width:20px;height:20px"> Mark this lab complete</label>
+<a href="../index.html" style="font-weight:700;color:#176b87;text-decoration:none">← Back to GenAI Foundations</a></div></div>
+<link rel="stylesheet" href="../assets/lab-overlay.css">
+<script src="../assets/course.js" data-root="../"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+/* minimal overlay for lab pages: watermark + protection (labs keep their own theme) */
+body.protected{-webkit-user-select:none;user-select:none}
+body.protected input,body.protected textarea{-webkit-user-select:text;user-select:text}
+.wm{position:fixed;inset:0;z-index:40;pointer-events:none;overflow:hidden;opacity:.05}
+.wm span{position:absolute;white-space:nowrap;font:800 22px ui-monospace,Menlo,monospace;letter-spacing:.2em;color:#0c2233;transform:rotate(-28deg)}
+.print-block{display:none}
+@media print{body>*{display:none!important}.print-block{display:block!important;padding:40px;font:20px system-ui,sans-serif}}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 06 · Retrieval-Augmented Generation · GenAI Foundations · Poorit Technologies</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="s6">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="index.html">Home</a><a href="session1.html">01</a><a href="session2.html">02</a><a href="session3.html">03</a><a href="session4.html">04</a><a href="session5.html">05</a><a href="session6.html" class="active">06</a></nav>
+</div></div>
+<section class="hero"><div class="wrap">
+  <div class="kicker">Session 06 · 20 min</div>
+  <h1>Retrieval-Augmented Generation</h1>
+  <p>How to make a model answer correctly about your private knowledge: the RAG pipeline, three patterns, and a support-team case study.</p>
+</div></section>
+<main class="wrap">
+<div class="panel">
+  <div class="eyebrow">1 · The problem</div>
+  <h2>"Can ChatGPT answer questions about <em>our</em> internal APIs?"</h2>
+  <p class="lead">Not out of the box. Public models have never seen your product manuals, error codes or processes. Ask anyway and you get a confident guess. Retrieval-Augmented Generation solves exactly this.</p>
+  <div class="flow"><span class="node alt">RAG</span><span class="arr">=</span><span class="node">LLM</span><span class="arr">+</span><span class="node">Search engine</span><span class="arr">+</span><span class="node">Your private knowledge</span></div>
+  <div class="grid2">
+    <div class="callout bad"><b>Without RAG</b>The LLM guesses from general training → hallucinations.</div>
+    <div class="callout good"><b>With RAG</b>The LLM first retrieves your documents → grounded answers → far fewer hallucinations.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">2 · The pipeline</div>
+  <h2>Four boxes</h2>
+  <div class="flow"><span class="node">User query</span><span class="arr">→</span><span class="node alt">Retriever</span><span class="arr">→</span><span class="node alt">LLM generator</span><span class="arr">→</span><span class="node">Final answer</span></div>
+  <div class="grid2">
+    <div class="card"><strong>Retriever</strong>Searches your company's documents. Documents are split into chunks, each chunk is turned into an embedding (a vector), and stored in a vector database. The query is embedded the same way and the nearest chunks are returned.</div>
+    <div class="card"><strong>LLM generator</strong>Reads the retrieved chunks plus your prompt and writes an accurate reply, ideally with citations back to the chunks.</div>
+  </div>
+  <h3>Day-to-day problem it solves</h3>
+  <p>NOC and support teams: debugging, incident response, internal documentation. Nobody remembers every runbook at 3 a.m.</p>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">3 · Case study</div>
+  <h2>The on-call runbook assistant</h2>
+  <p>A support engineer pastes an error code; the assistant retrieves the matching runbook sections and proposes the fix with the source quoted. Why this is the ideal first RAG project:</p>
+  <div class="grid3">
+    <div class="card"><strong>Hallucination check</strong>Public LLMs do not know your private error codes. Without RAG they guess; with RAG they are accurate.</div>
+    <div class="card"><strong>Speed</strong>Simulates resolving a production outage in seconds rather than minutes.</div>
+    <div class="card"><strong>Privacy</strong>Shows how to bring data to the model without retraining or uploading it to a training set.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">4 · Patterns</div>
+  <h2>Three RAG patterns, in order of maturity</h2>
+  <table>
+    <tr><th>Pattern</th><th>Shape</th><th>Use when</th></tr>
+    <tr><td>Simple RAG</td><td>Retriever → LLM → answer</td><td>Single-turn Q&amp;A over a document set</td></tr>
+    <tr><td>Conversational RAG</td><td>Chat history + retrieved docs → LLM</td><td>Follow-up questions need earlier context</td></tr>
+    <tr><td>Agentic RAG</td><td>Agent retrieves, validates facts, cross-checks sources, refines, repeats</td><td>High-stakes answers; multi-step research</td></tr>
+  </table>
+  <div class="callout"><b>Why agentic RAG is the current trend</b>Multi-step retrieval with validation means fewer hallucinations, at the cost of more tokens and latency.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">5 · A product you can study today</div>
+  <h2>NotebookLM as a RAG case study</h2>
+  <p>Upload a few documents to NotebookLM and you are watching an enterprise-grade RAG pipeline run:</p>
+  <ul>
+    <li><strong>Document grounding:</strong> it shows citations for every line, exactly what enterprise RAG should do.</li>
+    <li><strong>Multi-document context:</strong> ask across several files at once, classic RAG over a corpus.</li>
+    <li><strong>Chunking and embeddings (hidden):</strong> it splits your files into chunks, embeds them and stores them.</li>
+    <li><strong>Semantic retrieval:</strong> your question is embedded and matched to the closest chunks.</li>
+    <li><strong>Generation:</strong> the LLM writes the final answer from those chunks.</li>
+  </ul>
+  <div class="activity"><b class="lbl">Capstone · 30 min</b>Take three documents from your own work (a policy, a manual, a FAQ). Load them into NotebookLM or a similar tool. Ask five questions you know the answers to and two it cannot possibly answer. Score it: grounded, hallucinated, or correctly declined. Write up what you would need before trusting it with real users.</div>
+  <div class="callout good"><b>You have finished the sessions</b>Now do the three labs. They turn tokens, attention, training and context windows into things you can touch.</div>
+</div>
+
+<div class="module-done"><input type="checkbox" id="doneBox"><label for="doneBox"><strong>Mark module complete</strong> <span class="small">· saved in this browser</span></label></div>
+<div class="pager"><a class="btn secondary" href="session5.html">← Session 05: Limitations: Hallucination, Bias & Context</a><a class="btn" href="labs/llm-internals-lab.html">Go to Lab A: LLM Internals →</a></div>
+</main>
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. For personal online learning only; copying, recording, downloading or redistribution is not permitted.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+</div></footer>
+<script src="assets/course.js" data-root=""></script>
+</body>
+</html>

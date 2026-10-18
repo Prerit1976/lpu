@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 03 · The LLM Landscape · GenAI Foundations · Poorit Technologies</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="s3">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="index.html">Home</a><a href="session1.html">01</a><a href="session2.html">02</a><a href="session3.html" class="active">03</a><a href="session4.html">04</a><a href="session5.html">05</a><a href="session6.html">06</a></nav>
+</div></div>
+<section class="hero"><div class="wrap">
+  <div class="kicker">Session 03 · 20 min</div>
+  <h1>The LLM Landscape</h1>
+  <p>Open vs closed models, API vs self-hosted vs edge deployment, and an engineering rule of thumb for choosing between them.</p>
+</div></section>
+<main class="wrap">
+<div class="panel">
+  <div class="eyebrow">1 · Big picture</div>
+  <h2>Four axes to understand any model choice</h2>
+  <div class="grid2">
+    <div class="card"><strong>Model ownership</strong>Open vs closed weights.</div>
+    <div class="card"><strong>Control vs convenience</strong>Self-hosted vs API.</div>
+    <div class="card"><strong>Economics</strong>Token cost, infrastructure cost, scaling cost.</div>
+    <div class="card"><strong>Risk and compliance</strong>Data privacy, IP leakage, regulatory exposure.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">2 · Open models</div>
+  <h2>Weights you can download</h2>
+  <p>Models whose weights are available, fully or partially, so teams can run, fine-tune and customise them.</p>
+  <table>
+    <tr><th>Family</th><th>Known for</th></tr>
+    <tr><td>Llama (Meta)</td><td>Strong general reasoning, widely adopted in enterprises</td></tr>
+    <tr><td>Mistral</td><td>High performance at smaller sizes, excellent cost-efficiency</td></tr>
+    <tr><td>Gemma (Google)</td><td>Lightweight, optimised for research and controlled use</td></tr>
+    <tr><td>Qwen (Alibaba)</td><td>Strong multilingual and coding capability</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="callout good"><b>Why engineers like them</b>Full control over data and infra · fine-tuning for domain workflows · no per-token vendor lock-in · better fit for regulated environments.</div>
+    <div class="callout warn"><b>Key limitations</b>You manage GPUs, scaling, latency and monitoring · requires MLOps maturity · performance may lag frontier closed models.</div>
+  </div>
+  <p><strong>Summary:</strong> open models are ideal when control, customisation or compliance matters more than raw intelligence.</p>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">3 · Closed models</div>
+  <h2>Accessed only through a vendor API</h2>
+  <p>You never see the weights, only inputs and outputs.</p>
+  <table>
+    <tr><th>Family</th><th>Known for</th></tr>
+    <tr><td>GPT (OpenAI)</td><td>Strong general reasoning, mature ecosystem</td></tr>
+    <tr><td>Claude (Anthropic)</td><td>Long context, strong on safety and alignment</td></tr>
+    <tr><td>Gemini (Google)</td><td>Multimodal, deep Google ecosystem integration</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="callout good"><b>Strengths</b>State-of-the-art reasoning · zero infra management · fast product integration · continuous upgrades.</div>
+    <div class="callout bad"><b>Risks</b>Data residency and privacy · vendor lock-in · cost unpredictability at scale · limited customisation.</div>
+  </div>
+  <p><strong>Summary:</strong> closed models optimise for speed, quality and developer velocity: ideal for rapid innovation and prototypes.</p>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">4 · Trade-offs</div>
+  <h2>Cost, performance and privacy side by side</h2>
+  <table>
+    <tr><th>Dimension</th><th>Open-source LLM</th><th>Closed LLM</th></tr>
+    <tr><td>Performance</td><td>Medium to high (tunable)</td><td>Very high</td></tr>
+    <tr><td>Cost model</td><td>Infra + ops</td><td>Per-token pricing</td></tr>
+    <tr><td>Data privacy</td><td>Full control</td><td>Vendor governed</td></tr>
+    <tr><td>Fine-tuning</td><td>Full</td><td>Limited or none</td></tr>
+    <tr><td>Time to market</td><td>Slower</td><td>Very fast</td></tr>
+    <tr><td>Lock-in risk</td><td>Low</td><td>High</td></tr>
+  </table>
+  <div class="callout"><b>Engineering rule of thumb</b><strong>Prototype</strong> → closed model. <strong>Production + compliance</strong> → open model. <strong>Scale</strong> → hybrid: route easy traffic to a cheap open model and hard cases to a frontier API.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">5 · Deployment</div>
+  <h2>API, self-hosted or edge</h2>
+  <table>
+    <tr><th>Factor</th><th>API-based</th><th>Self-hosted</th><th>Edge (on device)</th></tr>
+    <tr><td>Control</td><td>Low</td><td>Very high</td><td>Full</td></tr>
+    <tr><td>Setup time</td><td>Minutes</td><td>Weeks</td><td>Weeks to months</td></tr>
+    <tr><td>Cost model</td><td>Usage-based</td><td>Infra-based</td><td>One-time + tuning</td></tr>
+    <tr><td>Privacy</td><td>Vendor-dependent</td><td>Full control</td><td>Maximum</td></tr>
+    <tr><td>Latency</td><td>Medium</td><td>Low</td><td>Very low</td></tr>
+    <tr><td>Scalability</td><td>Automatic</td><td>Manual or auto</td><td>Device-bound</td></tr>
+  </table>
+  <div class="activity"><b class="lbl">Decision exercise · 10 min</b>For each scenario pick open/closed and API/self-hosted/edge, and justify in one line: (a) a hospital summarising patient notes, (b) a startup demoing a sales assistant next week, (c) a factory sensor flagging defects without internet, (d) a bank's customer chatbot at 10 million conversations a month.</div>
+</div>
+
+<div class="module-done"><input type="checkbox" id="doneBox"><label for="doneBox"><strong>Mark module complete</strong> <span class="small">· saved in this browser</span></label></div>
+<div class="pager"><a class="btn secondary" href="session2.html">← Session 02: Generation Parameters & Tools</a><a class="btn" href="session4.html">Session 04: Prompt Engineering & Injection →</a></div>
+</main>
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. For personal online learning only; copying, recording, downloading or redistribution is not permitted.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+</div></footer>
+<script src="assets/course.js" data-root=""></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 02 · Generation Parameters & Tools · GenAI Foundations · Poorit Technologies</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="s2">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="index.html">Home</a><a href="session1.html">01</a><a href="session2.html" class="active">02</a><a href="session3.html">03</a><a href="session4.html">04</a><a href="session5.html">05</a><a href="session6.html">06</a></nav>
+</div></div>
+<section class="hero"><div class="wrap">
+  <div class="kicker">Session 02 · 25 min</div>
+  <h1>Generation Parameters & Tools</h1>
+  <p>The eight knobs that shape every LLM response: temperature, Top-K, Top-P, max tokens, presence and frequency penalties, stop sequences and the system prompt.</p>
+</div></section>
+<main class="wrap">
+<div class="panel">
+  <div class="eyebrow">Overview</div>
+  <h2>Eight knobs, one mental model</h2>
+  <p class="lead">Every API and most playgrounds expose the same controls. Each one answers a different question about how the next token is chosen or when generation stops.</p>
+  <table>
+    <tr><th>Knob</th><th>Controls</th><th>Typical range</th></tr>
+    <tr><td>Temperature</td><td>Creativity vs determinism</td><td>0.0 to 2.0</td></tr>
+    <tr><td>Top-K</td><td>Vocabulary width (hard cut-off)</td><td>1 to 100</td></tr>
+    <tr><td>Top-P</td><td>Probability mass (dynamic cut-off)</td><td>0.1 to 1.0</td></tr>
+    <tr><td>Max tokens</td><td>Response length and cost</td><td>Task-dependent</td></tr>
+    <tr><td>Presence penalty</td><td>Idea diversity</td><td>−2.0 to 2.0</td></tr>
+    <tr><td>Frequency penalty</td><td>Word repetition</td><td>−2.0 to 2.0</td></tr>
+    <tr><td>Stop sequences</td><td>Hard stop</td><td>List of strings</td></tr>
+    <tr><td>System prompt</td><td>Identity, tone, constraints</td><td>Text</td></tr>
+  </table>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">1 · Temperature</div>
+  <h2>Creativity vs determinism</h2>
+  <p>Temperature controls randomness in token selection. Higher gives more diverse, creative output; lower gives predictable, stable output. Engineering intuition: temperature is how <em>bold</em> the model is when picking the next token.</p>
+  <table><tr><th>Temperature</th><th>Output behaviour</th></tr><tr><td>0.0 to 0.2</td><td>Deterministic, factual, repeatable</td></tr><tr><td>0.5 to 0.7</td><td>Balanced, natural language</td></tr><tr><td>1.0+</td><td>Creative, risky, divergent</td></tr></table>
+  <div class="activity"><b class="lbl">Class demo</b>Prompt: <span class="mono">Explain cloud computing in 2 lines.</span><br>At temperature 0.1 you get a textbook definition. At 1.5 you get metaphors and storytelling, and occasionally nonsense.</div>
+  <div class="grid2"><div class="callout good"><b>Use low</b>Exams, coding, documentation, anything you must reproduce.</div><div class="callout"><b>Use high</b>Ideation, brainstorming, naming, creative writing.</div></div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">2 · Top-K</div>
+  <h2>Vocabulary control</h2>
+  <p>Top-K limits the choice to the K most probable next tokens. Smaller K means a safer, narrower vocabulary; larger K means richer, less predictable text. It says: "only choose from the top K likely next words."</p>
+  <table><tr><th>Top-K</th><th>Effect</th></tr><tr><td>1</td><td>Greedy: the same output every time</td></tr><tr><td>10</td><td>Controlled diversity</td></tr><tr><td>50</td><td>Creative, exploratory</td></tr></table>
+  <div class="activity"><b class="lbl">Class demo</b>Prompt: <span class="mono">Write a tagline for a cybersecurity product.</span> Compare Top-K 5 against Top-K 40.</div>
+  <div class="callout"><b>Key concept</b>Top-K is a <strong>hard cut-off</strong>: a discrete filter that ignores how probability is actually distributed.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">3 · Top-P (nucleus sampling)</div>
+  <h2>Probability-mass control</h2>
+  <p>Top-P considers the smallest set of tokens whose cumulative probability reaches P. It adapts: when the model is confident the set is tiny; when it is unsure the set widens. This makes it the dynamic alternative to Top-K.</p>
+  <table><tr><th>Top-P</th><th>Behaviour</th></tr><tr><td>0.2</td><td>Highly precise</td></tr><tr><td>0.9</td><td>Natural language</td></tr><tr><td>1.0</td><td>No restriction</td></tr></table>
+  <div class="activity"><b class="lbl">Class demo</b>Prompt: <span class="mono">Explain AI to a 10-year-old.</span> Compare Top-P 0.3 against 0.95.</div>
+  <div class="callout good"><b>Industry best practice</b>Tune Top-P <em>or</em> Top-K, not both aggressively. Most teams leave Top-K at its default and adjust temperature plus Top-P.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">4 · Max tokens</div>
+  <h2>Response-length control</h2>
+  <p>The maximum number of tokens in the output. It prevents runaway responses and caps cost per call.</p>
+  <div class="activity"><b class="lbl">Class demo</b>Ask for <span class="mono">Write an essay on the cow</span> with max tokens = 50, then 300. The 50-token version stops mid-sentence: that is <strong>truncation</strong>, the main risk of setting this too low. Always check the finish reason in the API response.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">5 and 6 · Penalties</div>
+  <h2>Presence penalty and frequency penalty</h2>
+  <div class="grid2">
+    <div class="card"><strong>Presence penalty · idea diversity</strong>Penalises returning to a topic already mentioned and nudges the model to introduce new concepts. Intuition: "Have we talked about this already? Then avoid it."<br><br><em>Demo:</em> <span class="mono">Generate 5 use cases of Generative AI</span>. At 0.0 the ideas overlap; at 1.0 they are distinct. Great for brainstorming and ideation rounds.</div>
+    <div class="card"><strong>Frequency penalty · word repetition</strong>Penalises reusing the same words in proportion to how often they appeared. Improves lexical variety and avoids loops.<br><br><em>Demo:</em> <span class="mono">Write a motivational paragraph</span> at frequency penalty 0 versus 1.2. Useful for essays, marketing copy and blog generators.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">7 · Stop sequences</div>
+  <h2>Hard output control</h2>
+  <p>A list of strings that tell the model to stop generating the moment one appears.</p>
+  <pre>"stop": ["###", "END"]</pre>
+  <p>Demo: "Generate steps until ###". Essential in chatbots, multi-turn prompts, agent pipelines and tool-calling workflows where the model must hand control back at a precise point.</p>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">8 · System prompt</div>
+  <h2>Behaviour control</h2>
+  <p>The system prompt sets identity, tone and constraints. It carries more weight than a user message and is the foundation of prompt engineering and agent design.</p>
+  <pre>System: You are a strict interviewer. Answer in one sentence only.
+User:   How do I make a masala dosa?</pre>
+  <p>Try the same question with and without the system line: the difference in length, tone and format is the whole lesson.</p>
+  <div class="callout"><b>Capabilities and tools worth knowing</b>Modern models work across text, code and images. Tools used in the live sessions: NotebookLM (grounded Q&amp;A over your files), Napkin (text to diagrams), Notion AI, Claude, ChatGPT, HeyGen (avatar video) and ElevenLabs (voice).</div>
+  <div class="activity"><b class="lbl">Homework · 15 min</b>Pick one prompt you use at work. Run it five times changing exactly one knob each time. Write down which setting you would ship and why.</div>
+</div>
+
+<div class="module-done"><input type="checkbox" id="doneBox"><label for="doneBox"><strong>Mark module complete</strong> <span class="small">· saved in this browser</span></label></div>
+<div class="pager"><a class="btn secondary" href="session1.html">← Session 01: Basics, Building Blocks & LLMs</a><a class="btn" href="session3.html">Session 03: The LLM Landscape →</a></div>
+</main>
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. For personal online learning only; copying, recording, downloading or redistribution is not permitted.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+</div></footer>
+<script src="assets/course.js" data-root=""></script>
+</body>
+</html>

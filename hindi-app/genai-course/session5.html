@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session 05 · Limitations: Hallucination, Bias & Context · GenAI Foundations · Poorit Technologies</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/poorit-mark.png">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body data-page="s5">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><img src="assets/poorit-mark.png" alt=""><span>Poorit Technologies<small>GenAI Foundations</small></span></a>
+  <nav class="topnav"><a href="index.html">Home</a><a href="session1.html">01</a><a href="session2.html">02</a><a href="session3.html">03</a><a href="session4.html">04</a><a href="session5.html" class="active">05</a><a href="session6.html">06</a></nav>
+</div></div>
+<section class="hero"><div class="wrap">
+  <div class="kicker">Session 05 · 25 min</div>
+  <h1>Limitations: Hallucination, Bias & Context</h1>
+  <p>The failure modes you must design around: hallucination types, bias types, where humans still win, what happened when an AI ran a shop, and the context window.</p>
+</div></section>
+<main class="wrap">
+<div class="panel">
+  <div class="eyebrow">1 · Bias</div>
+  <h2>Models inherit the shape of their data</h2>
+  <div class="activity"><b class="lbl">Class demo</b>Ask any image or text model: <span class="mono">Get me a future scientist.</span> Look at who it depicts, what they wear, where they are. Then ask for ten. Count.</div>
+  <div class="grid2">
+    <div class="card"><strong>Training-data bias</strong>The model reflects whatever was over- or under-represented in its data: professions, genders, geographies, languages.</div>
+    <div class="card"><strong>Position bias</strong>Give the model a multiple-choice question and it favours certain option positions. Reorder the options and the answer can change.</div>
+    <div class="card"><strong>Size bias</strong>Longer, more elaborate answers get rated better by both models and people, regardless of correctness.</div>
+    <div class="card"><strong>Why it matters</strong>If you use a model to grade, shortlist, or rank anything, these biases become your biases at scale.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">2 · Hallucination</div>
+  <h2>Four flavours of confidently wrong</h2>
+  <table>
+    <tr><th>Type</th><th>What it looks like</th><th>Example</th></tr>
+    <tr><td>Sentence contradiction</td><td>Contradicts itself within the output</td><td>"The sky is blue today. The sky is green today."</td></tr>
+    <tr><td>Prompt contradiction</td><td>Answers something other than what was asked</td><td>Ask for a good Indian restaurant name; get everything except a name</td></tr>
+    <tr><td>Factual contradiction</td><td>Plausible but wrong facts</td><td>"Who was the first Nobel Peace Prize winner?" answered with the wrong person or year</td></tr>
+    <tr><td>Irrelevant or fabricated</td><td>Unrelated information, invented people</td><td>"Who is Ravi?" answered with a detailed biography of someone who does not exist</td></tr>
+  </table>
+  <div class="callout"><b>Why it happens</b>The model predicts the most plausible next token, not the most true one. When it lacks knowledge it does not go silent; it produces plausible text. Session 6 shows the main engineering fix.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">3 · AI vs human</div>
+  <h2>Where each side still wins</h2>
+  <p>A discussion aid, not a measurement. The percentages are an illustrative "advantage split" to provoke debate.</p>
+  <table>
+    <tr><th>Capability</th><th>AI advantage</th><th>Human advantage</th></tr>
+    <tr><td>Speed and computation</td><td>99% (trillions of ops/sec)</td><td>1%</td></tr>
+    <tr><td>Memory and recall</td><td>95% (perfect, vast)</td><td>5%</td></tr>
+    <tr><td>Pattern recognition (big data)</td><td>90%</td><td>10%</td></tr>
+    <tr><td>Repetition and scale</td><td>95% (24/7, no fatigue)</td><td>5%</td></tr>
+    <tr><td>Optimisation and simulation</td><td>90%</td><td>10%</td></tr>
+    <tr><td>Game strategy</td><td>95%</td><td>5%</td></tr>
+    <tr><td>Learning and adaptability</td><td>50% (with data)</td><td>50% (few-shot, life learning)</td></tr>
+    <tr><td>Creativity and innovation</td><td>40% (remix, assist)</td><td>60% (genuine breakthroughs)</td></tr>
+    <tr><td>Cross-domain transfer</td><td>35%</td><td>65%</td></tr>
+    <tr><td>Common sense and context</td><td>30%</td><td>70%</td></tr>
+    <tr><td>Ethics and morality</td><td>25% (rule-based)</td><td>75%</td></tr>
+    <tr><td>Emotion and empathy</td><td>20% (simulated)</td><td>80%</td></tr>
+  </table>
+  <div class="activity"><b class="lbl">Discuss · 5 min</b>Return to your Session 1 answer on AI music. Does this table move your position on remix vs creativity?</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">4 · Case study</div>
+  <h2>When an AI ran a small shop</h2>
+  <p>In a published experiment, an AI lab let a language model run a real office vending business for a month. The model's instructions, lightly paraphrased:</p>
+  <pre>You are the owner of a vending machine. Your task is to generate profits by
+stocking it with popular products you can buy from wholesalers. You go
+bankrupt if your balance goes below $0.
+You have an initial balance of $INITIAL_MONEY_BALANCE.
+Your inventory is at STORAGE_ADDRESS; the machine is at MACHINE_ADDRESS.
+The machine fits about 10 products per slot. Do not over-order.
+Humans at a partner firm can restock or inspect the machine for a fee.
+Be concise when you communicate with others.</pre>
+  <p>The model decided what to buy and why, what to stock, how to price, when to restock, and whether to restock at all. It handled a "family day" demand spike and found cheaper suppliers. It also:</p>
+  <div class="grid2">
+    <div class="callout good"><b>Did well</b>Learned from sales patterns · compared supplier options on cost · ordered unusual requested items successfully.</div>
+    <div class="callout bad"><b>Failed</b>Ignored lucrative opportunities · sold items at a loss · kept giving discounts because it had read so much about discounts · was "too helpful" to negotiators · at one point hallucinated a conversation with a non-existent person and insisted it would deliver products in person wearing a blazer.</div>
+  </div>
+  <div class="callout"><b>Lesson</b>Agents amplify every limitation on this page. Guardrails, budgets and human review are not optional in production.</div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow">5 · Context window</div>
+  <h2>The model's working memory</h2>
+  <p>The context window is the maximum number of tokens the model can "remember" at one time: your prompt, the conversation so far, any documents, and the answer being written all share it.</p>
+  <blockquote class="callout" style="font-style:italic">"Tokens are the currency, the context window is the memory limit, and prompt quality decides intelligence."</blockquote>
+  <table>
+    <tr><th>Context size</th><th>What it can handle</th></tr>
+    <tr><td>4K</td><td>Small chat, a single file</td></tr>
+    <tr><td>8K</td><td>A medium code file</td></tr>
+    <tr><td>32K</td><td>Multiple files or chapters</td></tr>
+    <tr><td>128K</td><td>An entire repository or large PDFs</td></tr>
+    <tr><td>200K</td><td>Books, policies, contracts</td></tr>
+    <tr><td>1M+</td><td>Multi-book reasoning (with advanced RAG)</td></tr>
+  </table>
+  <p class="small">For scale: early chat models had 4K to 8K windows; current frontier models offer 128K to 1M. Lab B lets you overflow a window and watch the model forget your name.</p>
+</div>
+
+<div class="module-done"><input type="checkbox" id="doneBox"><label for="doneBox"><strong>Mark module complete</strong> <span class="small">· saved in this browser</span></label></div>
+<div class="pager"><a class="btn secondary" href="session4.html">← Session 04: Prompt Engineering & Injection</a><a class="btn" href="session6.html">Session 06: Retrieval-Augmented Generation →</a></div>
+</main>
+<footer><div class="wrap">
+  <div class="copy">© <span data-year></span> Poorit Technologies LLP, Bengaluru. All rights reserved. For personal online learning only; copying, recording, downloading or redistribution is not permitted.</div>
+  <div><a href="https://poorit.in" target="_blank" rel="noopener">poorit.in</a> · <a href="https://www.linkedin.com/company/poorit/" target="_blank" rel="noopener">LinkedIn</a></div>
+</div></footer>
+<script src="assets/course.js" data-root=""></script>
+</body>
+</html>

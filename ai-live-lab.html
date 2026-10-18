@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Live Lab — What Can Artificial Intelligence Actually Do?</title>
+<style>
+  :root{
+    /* bright theme */
+    --bg:#eef3fc; --bg2:#e4ecfb; --panel:#ffffff; --panel2:#f3f7fe;
+    --line:#dbe4f3; --line2:#c4d2ea;
+    --ink:#0f1b2e; --muted:#4a5b76; --dim:#8496b3;
+    --cyan:#0891b2; --violet:#7c3aed; --amber:#e08a00;
+    --green:#0d9f6e; --pink:#db2777; --red:#e11d48; --blue:#2563eb;
+    --board:#0b1324;               /* dark "instrument screen" for the live visuals */
+    --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; color:var(--ink);
+    background:
+      radial-gradient(1100px 700px at 80% -10%, rgba(124,58,237,.10), transparent 60%),
+      radial-gradient(900px 600px at 5% 10%, rgba(8,145,178,.12), transparent 55%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    background-attachment:fixed;
+    font-family:var(--sans); line-height:1.6;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 22px}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:12px 22px;
+    background:linear-gradient(180deg,rgba(238,243,252,.95),rgba(238,243,252,.6) 70%,transparent);
+    backdrop-filter:blur(6px);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .timer{font-family:var(--mono);font-size:13px;color:var(--cyan);border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:var(--panel);cursor:pointer;user-select:none;letter-spacing:.05em}
+  .timer:hover{border-color:var(--cyan)}
+  .progress-track{position:fixed;top:0;left:0;right:0;height:3px;z-index:60;background:transparent}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));box-shadow:0 0 12px var(--cyan);transition:width .12s linear}
+
+  /* ---------- generic section ---------- */
+  section{padding:96px 0 72px;min-height:auto;position:relative}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .eyebrow .num{color:var(--violet)}
+  .eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+  h1{font-size:clamp(38px,7vw,76px);line-height:1.02;margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+  h2{font-size:clamp(28px,4.6vw,46px);line-height:1.06;margin:0 0 16px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+  .lead{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:60ch;margin:0 0 8px}
+  .grad{background:linear-gradient(120deg,var(--cyan),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 20px 50px -30px rgba(30,58,120,.35)}
+  .panel-glow{box-shadow:0 22px 60px -32px rgba(8,145,178,.5),0 0 0 1px rgba(8,145,178,.08)}
+
+  .btn{
+    font-family:var(--mono);font-size:13.5px;letter-spacing:.06em;
+    color:#ffffff;background:linear-gradient(135deg,var(--cyan),#0ea5c4);border:none;border-radius:10px;
+    padding:12px 20px;cursor:pointer;font-weight:700;text-transform:uppercase;
+    transition:transform .1s ease,box-shadow .2s ease,filter .2s ease;
+    box-shadow:0 10px 24px -10px rgba(8,145,178,.7);
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 16px 32px -12px rgba(8,145,178,.8)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--line2);box-shadow:none}
+  .btn.ghost:hover{border-color:var(--cyan);background:rgba(8,145,178,.08)}
+  .btn.violet{background:linear-gradient(135deg,var(--violet),#8b5cf6);color:#fff;box-shadow:0 10px 24px -10px rgba(124,58,237,.7)}
+  .btn.sm{padding:9px 14px;font-size:12px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+  .stat{font-family:var(--mono)}
+  .stat .big{font-size:34px;font-weight:800;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+  .stat .lbl{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+
+  .chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);background:var(--panel)}
+
+  canvas{display:block;max-width:100%}
+  .hint{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.03em}
+
+  /* ---------- hero ---------- */
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:80px}
+  .hero-net{position:absolute;inset:0;z-index:0;opacity:.55}
+  .hero .wrap{z-index:2}
+  .hero .kicker{font-family:var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--violet);font-size:13px;margin-bottom:22px}
+  .hero .sub{margin-top:26px;max-width:56ch}
+  .hero-cta{margin-top:38px}
+  .scroll-cue{margin-top:60px;font-family:var(--mono);font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:10px;animation:float 2.4s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+  /* ---------- dimensions ---------- */
+  .dim-list{display:flex;flex-direction:column;gap:14px}
+  .dim{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;transition:border-color .2s,transform .2s}
+  .dim:hover{border-color:var(--line2);transform:translateX(4px)}
+  .dim .head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dim .name{font-weight:700;font-size:16px}
+  .dim .name small{display:block;font-weight:400;color:var(--dim);font-size:12.5px;font-family:var(--mono);letter-spacing:.02em;margin-top:2px}
+  .stars{font-size:18px;letter-spacing:2px;white-space:nowrap}
+  .star{color:var(--line2)}
+  .star.on{color:var(--amber);text-shadow:0 0 10px rgba(251,191,36,.6)}
+
+  /* ---------- learn / teach ---------- */
+  .lab-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:22px;align-items:start}
+  @media(max-width:820px){.lab-grid{grid-template-columns:1fr}}
+  .board{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--board);box-shadow:0 20px 50px -30px rgba(30,58,120,.4)}
+  .board canvas{width:100%;height:auto}
+  .readout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .rd{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .rd .v{font-family:var(--mono);font-size:24px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums}
+  .rd .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+  .seg button{font-family:var(--mono);font-size:12px;padding:8px 12px;background:transparent;color:var(--muted);border:none;cursor:pointer;letter-spacing:.04em}
+  .seg button.active{background:var(--cyan);color:#fff;font-weight:700}
+
+  /* ---------- language ---------- */
+  .lang-input{width:100%;font-family:var(--sans);font-size:18px;color:var(--ink);background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:16px 18px;resize:none}
+  .lang-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+  .meter{height:16px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;position:relative}
+  .meter .fill{height:100%;width:50%;transition:width .5s cubic-bezier(.2,.8,.2,1),background .5s}
+  .tokens{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .tok{font-family:var(--mono);font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);position:relative}
+  .verdict{font-size:26px;font-weight:800;font-family:var(--mono);letter-spacing:.02em}
+
+  /* ---------- timeline ---------- */
+  .tl-bars{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .tl{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:center}
+  .tl .yr{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .tl .track{height:38px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);position:relative;overflow:hidden}
+  .tl .barf{position:absolute;inset:0;width:0;border-radius:7px;transition:width 1.1s cubic-bezier(.2,.85,.25,1);display:flex;align-items:center;padding:0 12px}
+  .tl .barlbl{font-family:var(--mono);font-size:12.5px;color:#04121a;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- creativity dial ---------- */
+  .mono-label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .poem-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;padding:26px;min-height:360px;box-shadow:0 20px 50px -30px rgba(30,58,120,.35)}
+  .poem-prompt{font-family:var(--mono);font-size:12.5px;color:var(--muted);border-left:3px solid var(--cyan);padding-left:14px;margin-bottom:24px;line-height:1.55}
+  .poem-out{font-size:clamp(18px,2.4vw,22px);line-height:1.95;white-space:pre-wrap;font-weight:500;color:var(--ink);min-height:180px}
+  .poem-out .cursor{display:inline-block;width:9px;background:var(--violet);animation:blink 1s steps(1) infinite;margin-left:1px}
+  @keyframes blink{50%{opacity:0}}
+  .slider{width:100%;-webkit-appearance:none;appearance:none;height:10px;border-radius:999px;outline:none;margin:6px 0 0;
+    background:linear-gradient(90deg,var(--cyan),var(--violet) 55%,var(--pink))}
+  .slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--violet);cursor:pointer;box-shadow:0 3px 10px rgba(30,40,90,.35);transition:transform .1s}
+  .slider::-webkit-slider-thumb:hover{transform:scale(1.12)}
+  .slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--violet);cursor:pointer;box-shadow:0 3px 10px rgba(30,40,90,.35)}
+  .slider-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:9px;letter-spacing:.04em}
+
+  /* ---------- generative ---------- */
+  .gen-wrap{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--board);box-shadow:0 20px 50px -30px rgba(30,58,120,.4)}
+
+  /* ---------- brief (education) ---------- */
+  .brief-stat{display:flex;flex-direction:column;justify-content:center;gap:6px}
+  .brief-stat .bs-num{font-family:var(--mono);font-weight:800;font-size:clamp(38px,6vw,58px);line-height:1;color:var(--cyan);font-variant-numeric:tabular-nums}
+  .brief-stat .bs-num span{font-size:.5em;opacity:.7}
+  .brief-stat .bs-num.alt{color:var(--pink);margin-top:14px}
+  .brief-stat .bs-txt{color:var(--muted);font-size:15px;max-width:34ch}
+  .brief-quote{display:flex;flex-direction:column;justify-content:center;position:relative}
+  .brief-quote .bq-mark{font-family:Georgia,serif;font-size:64px;line-height:.6;color:var(--violet);opacity:.5}
+  .brief-quote p{font-size:clamp(19px,2.6vw,24px);font-weight:600;line-height:1.45;margin:8px 0 0}
+
+  .family{display:block}
+  .fam{border:1px solid var(--line2);border-left:4px solid var(--fc);border-radius:12px;padding:14px 16px;margin:8px 0 0;background:color-mix(in srgb,var(--fc) 6%,var(--panel))}
+  .fam .fl{font-weight:800;font-size:15px;color:var(--ink);margin-right:10px}
+  .fam .fd{font-size:13.5px;color:var(--muted)}
+
+  .evo{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:720px){.evo{grid-template-columns:repeat(2,1fr)}}
+  .evo-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 16px 40px -30px rgba(30,58,120,.4)}
+  .evo-card .ev-n{font-family:var(--mono);font-weight:800;font-size:22px;color:var(--dim)}
+  .evo-card .ev-t{margin-top:8px;font-size:14px;font-weight:600;color:var(--ink);line-height:1.35}
+  .evo-card.hot{background:linear-gradient(135deg,rgba(8,145,178,.12),rgba(124,58,237,.12));border-color:var(--violet)}
+  .evo-card.hot .ev-n{color:var(--violet)}
+
+  .assess{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.assess{grid-template-columns:1fr}}
+  .as-col{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--panel2)}
+  .as-col .as-h{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+  .as-col.old .as-h{color:var(--dim)}
+  .as-col.new{border-color:var(--violet);background:linear-gradient(135deg,rgba(8,145,178,.08),rgba(124,58,237,.08))}
+  .as-col.new .as-h{color:var(--violet)}
+  .as-flow{font-size:15px;font-weight:600;line-height:1.7;color:var(--ink)}
+  .as-flow b{color:var(--cyan);font-weight:800;margin:0 2px}
+  .brief-line{margin:18px 0 0;font-size:17px;font-weight:600;line-height:1.55;color:var(--ink);border-top:1px solid var(--line);padding-top:16px}
+  .eval-chips{display:flex;flex-wrap:wrap;gap:8px}
+
+  .foot{padding:60px 0 90px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12.5px;letter-spacing:.06em}
+  .foot .big{font-family:var(--sans);font-size:clamp(22px,3.4vw,32px);color:var(--ink);font-weight:800;letter-spacing:-.01em;margin-bottom:12px}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    *{animation-duration:.001s!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+<div class="topbar">
+  <div class="brand"><span class="dot"></span> AI&nbsp;Live&nbsp;Lab</div>
+  <div class="timer" id="timer" title="Click to start / pause the 20-minute presentation timer">⏱ 20:00</div>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <canvas class="hero-net" id="heroNet"></canvas>
+  <div class="wrap">
+    <div class="kicker">A Live Demonstration</div>
+    <h1>What can<br><span class="grad">Artificial Intelligence</span><br>actually do?</h1>
+    <p class="lead sub">Not slides about AI — AI running <em>live</em>, right now, on this screen. In the next 20 minutes you'll turn AI's creativity dial, watch it read the emotion in a sentence, and see it create original art. Real algorithms. No pre-recorded tricks.</p>
+    <div class="hero-cta row">
+      <a class="btn" href="#dims">▸ Begin the demo</a>
+      <span class="chip">5 live experiments</span>
+      <span class="chip">~20 minutes</span>
+    </div>
+    <div class="scroll-cue">↓ scroll or press begin</div>
+  </div>
+</section>
+
+<!-- ============ 1. DIMENSIONS ============ -->
+<section id="dims">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">01</span> The Map of Intelligence</p>
+    <h2 class="reveal">Six dimensions of what AI can do</h2>
+    <p class="lead reveal">Modern AI isn't one skill — it's a spread of them. Here's roughly where today's systems stand. Watch the shape fill in.</p>
+    <div class="grid2" style="margin-top:32px;align-items:center">
+      <div class="panel panel-glow reveal" style="display:flex;justify-content:center">
+        <canvas id="radar" width="440" height="440"></canvas>
+      </div>
+      <div class="dim-list reveal" id="dimList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. CREATIVITY DIAL ============ -->
+<section id="creativity">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">02</span> How AI Thinks · The Creativity Dial</p>
+    <h2 class="reveal">Same question. <span class="grad">Turn the dial</span>, change the answer.</h2>
+    <p class="lead reveal">Ask a person the same thing twice and you'll get slightly different answers. AI has an actual knob for this — it's called <strong>temperature</strong>. Turn it low and the AI plays it safe; turn it up and it gets imaginative. Drag the dial and watch the poem <em>and</em> the AI's word choices change in real time.</p>
+
+    <div class="lab-grid" style="margin-top:28px">
+      <div class="reveal">
+        <div class="poem-card">
+          <div class="poem-prompt">Prompt · “Write a 4-line poem about a teacher inspiring students to learn AI.”</div>
+          <div class="poem-out" id="poemOut"></div>
+        </div>
+        <div class="readout">
+          <div class="rd"><div class="v" id="tempVal">0.7</div><div class="k">Temperature</div></div>
+          <div class="rd"><div class="v" id="tempMood">Creative</div><div class="k">Style</div></div>
+        </div>
+      </div>
+      <div class="panel reveal">
+        <div class="mono-label">Creativity dial — drag it</div>
+        <input type="range" id="tempSlider" min="1" max="15" value="7" class="slider" aria-label="Temperature">
+        <div class="slider-scale"><span>Predictable</span><span>Balanced</span><span>Wild</span></div>
+        <div class="seg" id="tempPresets" style="margin-top:18px">
+          <button data-t="1">Safe · 0.1</button>
+          <button data-t="7" class="active">Creative · 0.7</button>
+          <button data-t="15">Wild · 1.5</button>
+        </div>
+        <div class="mono-label" style="margin-top:24px">What word comes next?</div>
+        <div class="hint" style="margin:-4px 0 10px">“A teacher opens the door to&nbsp;…”</div>
+        <canvas id="probChart" width="360" height="210"></canvas>
+        <p class="hint" style="margin-top:12px">Low temperature → the AI almost always grabs the obvious word. High temperature → surprising words get a real shot. That's creativity, as a number — no math degree required.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. LANGUAGE ============ -->
+<section id="language">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">03</span> Understanding · Language</p>
+    <h2 class="reveal">AI reads the <span class="grad">emotion</span> in words</h2>
+    <p class="lead reveal">Type any sentence. The model scores each word, weighs them, and reads the overall mood — the foundation of how AI understands reviews, chats, and search. Try something from the audience.</p>
+
+    <div class="panel reveal" style="margin-top:28px">
+      <textarea class="lang-input" id="langInput" rows="2">This class is absolutely amazing and I love learning about the future!</textarea>
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <div class="row">
+          <button class="btn sm" id="langRun">▸ Analyze</button>
+          <button class="btn ghost sm" data-ex="I am so happy, this is brilliant and wonderful.">😊 Positive</button>
+          <button class="btn ghost sm" data-ex="This is terrible, boring and a complete waste of time.">😠 Negative</button>
+          <button class="btn ghost sm" data-ex="The meeting is scheduled for Tuesday at noon.">😐 Neutral</button>
+        </div>
+      </div>
+      <div style="margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:14px">
+        <span class="hint">NEGATIVE</span>
+        <div class="meter" style="flex:1"><div class="fill" id="sentFill"></div></div>
+        <span class="hint">POSITIVE</span>
+      </div>
+      <div style="text-align:center;margin-top:18px"><span class="verdict" id="sentVerdict">—</span></div>
+      <div class="tokens" id="tokens"></div>
+      <p class="hint" style="margin-top:14px">Each chip is a word the model recognised. Green = pushes positive, red = pushes negative, brighter = stronger pull.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. GENERATIVE ============ -->
+<section id="create">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">04</span> Creativity · Generation</p>
+    <h2 class="reveal">AI doesn't just analyze — it <span class="grad">creates</span></h2>
+    <p class="lead reveal">Generative AI makes things that never existed. Below, an algorithm paints a unique piece of flow-field art every time — no two are ever the same. Hit generate and watch it bloom.</p>
+
+    <div class="panel reveal" style="margin-top:28px">
+      <div class="gen-wrap"><canvas id="genCanvas" width="960" height="420"></canvas></div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn" id="genRun">✦ Generate new art</button>
+        <span class="chip" id="genSeed">seed · —</span>
+        <span class="hint">Same idea, new result — like asking an AI for “another one”.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. THE BRIEF (AirForce · AI in education) ============ -->
+<section id="brief">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">05</span> Why This Matters · Education</p>
+    <h2 class="reveal">AI in the classroom — <span class="grad">the whole picture</span></h2>
+    <p class="lead reveal">The demos show what AI <em>can do</em>. Here's what it means for teaching and learning — the heart of the AirForce brief.</p>
+
+    <!-- hook -->
+    <div class="grid2 reveal" style="margin-top:28px;align-items:stretch">
+      <div class="panel brief-stat">
+        <div class="bs-num">92<span>%</span></div>
+        <div class="bs-txt">of higher-education professionals report using AI tools…</div>
+        <div class="bs-num alt">23.6<span>%</span></div>
+        <div class="bs-txt">…but only this many feel <b>very confident</b> using them.</div>
+      </div>
+      <div class="panel brief-quote">
+        <div class="bq-mark">“</div>
+        <p>The question isn't whether students will use AI. They already are. The question is whether education will teach them to use it <span class="grad">well</span>.</p>
+      </div>
+    </div>
+
+    <!-- AI family -->
+    <div class="panel reveal" style="margin-top:22px">
+      <div class="mono-label" style="margin-bottom:16px">The AI family — each one lives inside the last</div>
+      <div class="family">
+        <div class="fam" style="--fc:var(--blue)"><span class="fl">AI</span><span class="fd">Machines doing tasks that normally need human intelligence</span>
+          <div class="fam" style="--fc:var(--cyan)"><span class="fl">Machine Learning</span><span class="fd">Learns patterns from data instead of hard-coded rules</span>
+            <div class="fam" style="--fc:var(--green)"><span class="fl">Deep Learning</span><span class="fd">ML using neural networks with many layers</span>
+              <div class="fam" style="--fc:var(--violet)"><span class="fl">Generative AI</span><span class="fd">Doesn't just decide — it <b>creates</b></span>
+                <div class="fam" style="--fc:var(--pink)"><span class="fl">LLMs</span><span class="fd">Generative AI focused on language</span>
+                  <div class="fam" style="--fc:var(--amber)"><span class="fl">ChatGPT</span><span class="fd">A specific LLM you've probably used</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- education evolution -->
+    <div class="reveal" style="margin-top:22px">
+      <div class="mono-label" style="margin-bottom:14px">How teaching has evolved</div>
+      <div class="evo">
+        <div class="evo-card"><div class="ev-n">1.0</div><div class="ev-t">Teacher → Student</div></div>
+        <div class="evo-card"><div class="ev-n">2.0</div><div class="ev-t">Teacher + Internet</div></div>
+        <div class="evo-card"><div class="ev-n">3.0</div><div class="ev-t">Teacher + Platforms + Data</div></div>
+        <div class="evo-card hot"><div class="ev-n">4.0</div><div class="ev-t">Teacher + AI + Data + Personalisation</div></div>
+      </div>
+    </div>
+
+    <!-- assessment -->
+    <div class="panel reveal" style="margin-top:22px">
+      <div class="mono-label" style="margin-bottom:16px">AI changes assessment</div>
+      <div class="assess">
+        <div class="as-col old">
+          <div class="as-h">Traditional</div>
+          <div class="as-flow">Question <b>→</b> Answer <b>→</b> Marks</div>
+        </div>
+        <div class="as-col new">
+          <div class="as-h">AI-enabled</div>
+          <div class="as-flow">Question <b>→</b> Student reasoning <b>→</b> Answer <b>→</b> Analysis <b>→</b> Feedback <b>→</b> Next question</div>
+        </div>
+      </div>
+      <p class="brief-line">“Assessment should no longer just tell us <em>how much</em> a learner scored. It should tell us <span class="grad">how the learner thinks</span>.”</p>
+      <div class="mono-label" style="margin:20px 0 10px">AI can help evaluate</div>
+      <div class="eval-chips">
+        <span class="chip">conceptual understanding</span><span class="chip">reasoning</span><span class="chip">coding</span>
+        <span class="chip">written answers</span><span class="chip">communication</span><span class="chip">problem-solving</span>
+        <span class="chip">interview responses</span><span class="chip">misconceptions</span>
+      </div>
+    </div>
+
+    <div class="row reveal" style="margin-top:22px">
+      <button class="btn" id="notionOpen">Open the full brief in Notion ↗</button>
+      <span class="hint">The live document (edits there show up when you open it).</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. TIMELINE ============ -->
+<section id="timeline">
+  <div class="wrap">
+    <p class="eyebrow reveal"><span class="num">06</span> The Trajectory</p>
+    <h2 class="reveal">Why this feels like it happened <span class="grad">overnight</span></h2>
+    <p class="lead reveal">AI capability barely moved for decades — then went vertical. Each bar is a landmark and how capable AI was, relative to today. Scroll to let it grow.</p>
+    <div class="panel reveal" style="margin-top:28px" id="tlPanel">
+      <div class="tl-bars" id="tlBars"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSE ============ -->
+<section id="close">
+  <div class="wrap" style="text-align:center">
+    <div class="grid2" style="gap:16px;margin:0 auto 40px;max-width:760px">
+      <div class="panel stat reveal"><div class="big grad" id="cLearn">0</div><div class="lbl">Creativity levels explored</div></div>
+      <div class="panel stat reveal"><div class="big grad" id="cArt">0</div><div class="lbl">Artworks the AI created</div></div>
+    </div>
+    <div class="foot">
+      <div class="big">Learning · Understanding · Creating.</div>
+      That's not the future — it just ran on this screen.<br><br>
+      AI LIVE LAB · built for a live audience · everything above ran on your device, offline.
+    </div>
+  </div>
+</section>
+
+<script>
+"use strict";
+const R = m => window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+const reduced = R();
+
+/* ===================== FLOATING PARTICLES (bright bg) ===================== */
+(function(){
+  const c=document.getElementById("stars"),x=c.getContext("2d");
+  const cols=[[8,145,178],[124,58,237],[219,39,119],[13,159,110]];
+  let w,h,ps=[];
+  function size(){w=c.width=innerWidth;h=c.height=innerHeight;
+    const n=Math.min(70,Math.floor(w*h/22000));
+    ps=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,
+      r:Math.random()*3+1.5,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,
+      c:cols[Math.floor(Math.random()*cols.length)],tw:Math.random()*6.28}));}
+  size();addEventListener("resize",size);
+  let t=0;
+  (function loop(){
+    x.clearRect(0,0,w,h);
+    for(const p of ps){
+      if(!reduced){p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0)p.x=w;if(p.x>w)p.x=0;if(p.y<0)p.y=h;if(p.y>h)p.y=0;}
+      const a=(0.10+0.10*Math.abs(Math.sin(t*.5+p.tw)));
+      x.fillStyle="rgba("+p.c[0]+","+p.c[1]+","+p.c[2]+","+a.toFixed(3)+")";
+      x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill();
+    }
+    t+=.016; requestAnimationFrame(loop);
+  })();
+})();
+
+/* ===================== HERO NEURAL NET ===================== */
+(function(){
+  const c=document.getElementById("heroNet"),x=c.getContext("2d");
+  let w,h,nodes=[],layers=[4,6,6,3];
+  function size(){w=c.width=innerWidth;h=c.height=Math.max(560,innerHeight);build();}
+  function build(){
+    nodes=[];const pad=w*0.14, span=w-pad*2;
+    layers.forEach((n,li)=>{
+      const lx=pad+span*(li/(layers.length-1));
+      for(let i=0;i<n;i++){
+        const ly=h*0.28+(h*0.44)*(n===1?.5:i/(n-1));
+        nodes.push({x:lx,y:ly,l:li,ph:Math.random()*6.28});
+      }
+    });
+  }
+  size();addEventListener("resize",size);
+  let t=0;
+  (function loop(){
+    x.clearRect(0,0,w,h);
+    // edges
+    for(const a of nodes)for(const b of nodes){
+      if(b.l===a.l+1){
+        const pulse=(Math.sin(t*2+a.ph+b.ph)+1)/2;
+        x.strokeStyle="rgba(8,145,178,"+(0.05+pulse*0.16).toFixed(3)+")";
+        x.lineWidth=0.6+pulse*1.0;
+        x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
+      }
+    }
+    // nodes
+    for(const nd of nodes){
+      const g=(Math.sin(t*2.2+nd.ph)+1)/2;
+      const col=nd.l%2? "124,58,237":"8,145,178";
+      x.fillStyle="rgba("+col+","+(0.55+g*0.45).toFixed(2)+")";
+      x.beginPath();x.arc(nd.x,nd.y,3+g*2.4,0,6.283);x.fill();
+      x.fillStyle="rgba("+col+",0.12)";
+      x.beginPath();x.arc(nd.x,nd.y,10+g*6,0,6.283);x.fill();
+    }
+    t+=reduced?0:0.012; requestAnimationFrame(loop);
+  })();
+})();
+
+/* ===================== REVEAL ON SCROLL ===================== */
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}})},{threshold:.14});
+document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+
+/* ===================== PROGRESS BAR ===================== */
+const pbar=document.getElementById("progressBar");
+addEventListener("scroll",()=>{
+  const st=document.documentElement.scrollTop, ht=document.documentElement.scrollHeight-innerHeight;
+  pbar.style.width=(ht>0?(st/ht*100):0)+"%";
+},{passive:true});
+
+/* ===================== TIMER ===================== */
+(function(){
+  const el=document.getElementById("timer");let left=20*60,run=false,id=null;
+  function fmt(){const m=Math.floor(left/60),s=left%60;el.textContent="⏱ "+m+":"+String(s).padStart(2,"0");
+    el.style.color = left<=60? "var(--red)" : left<=300? "var(--amber)" : "var(--cyan)";}
+  fmt();
+  el.onclick=()=>{run=!run;el.title=run?"Click to pause":"Click to resume";
+    if(run){id=setInterval(()=>{if(left>0){left--;fmt();}else{clearInterval(id);run=false;}},1000);}
+    else clearInterval(id);};
+})();
+
+/* ===================== 1. RADAR + STARS ===================== */
+const DIMS=[
+  {name:"Vision",sub:"Seeing & recognising images",v:0.90,stars:5},
+  {name:"Language",sub:"Reading, writing, translating",v:0.94,stars:5},
+  {name:"Reasoning",sub:"Logic, planning, problem-solving",v:0.72,stars:4},
+  {name:"Creativity",sub:"Art, music, ideas, design",v:0.80,stars:4},
+  {name:"Speed",sub:"Doing it in milliseconds",v:0.97,stars:5},
+  {name:"Learning",sub:"Improving from data",v:0.85,stars:4},
+];
+(function(){
+  // star rows
+  const list=document.getElementById("dimList");
+  list.innerHTML=DIMS.map(d=>{
+    const st=Array.from({length:5},(_,i)=>'<span class="star '+(i<d.stars?'on':'')+'">★</span>').join("");
+    return '<div class="dim"><div class="head"><div class="name">'+d.name+'<small>'+d.sub+'</small></div><div class="stars">'+st+'</div></div></div>';
+  }).join("");
+
+  // radar
+  const c=document.getElementById("radar"),x=c.getContext("2d");
+  const W=c.width,H=c.height,cx=W/2,cy=H/2,Rr=155,N=DIMS.length;
+  let prog=0,started=false;
+  const pt=(i,r)=>{const a=-Math.PI/2+i/N*Math.PI*2;return[cx+Math.cos(a)*r,cy+Math.sin(a)*r];};
+  function draw(){
+    x.clearRect(0,0,W,H);
+    // grid rings
+    for(let g=1;g<=4;g++){
+      x.beginPath();
+      for(let i=0;i<=N;i++){const[px,py]=pt(i%N,Rr*g/4);i?x.lineTo(px,py):x.moveTo(px,py);}
+      x.closePath();x.strokeStyle="rgba(100,130,180,0.28)";x.lineWidth=1;x.stroke();
+    }
+    // spokes + labels
+    x.font="600 12px ui-monospace,monospace";
+    for(let i=0;i<N;i++){
+      const[ex,ey]=pt(i,Rr);
+      x.beginPath();x.moveTo(cx,cy);x.lineTo(ex,ey);x.strokeStyle="rgba(100,130,180,0.28)";x.stroke();
+      const[lx,ly]=pt(i,Rr+24);
+      x.fillStyle="#3b4a63";x.textAlign=lx<cx-10?"right":lx>cx+10?"left":"center";x.textBaseline="middle";
+      x.fillText(DIMS[i].name,lx,ly);
+    }
+    // shape
+    x.beginPath();
+    for(let i=0;i<=N;i++){const d=DIMS[i%N];const[px,py]=pt(i%N,Rr*d.v*prog);i?x.lineTo(px,py):x.moveTo(px,py);}
+    x.closePath();
+    const grad=x.createLinearGradient(0,0,W,H);
+    grad.addColorStop(0,"rgba(8,145,178,0.32)");grad.addColorStop(1,"rgba(124,58,237,0.32)");
+    x.fillStyle=grad;x.fill();
+    x.strokeStyle="rgba(8,145,178,0.95)";x.lineWidth=2.4;x.stroke();
+    // vertices
+    for(let i=0;i<N;i++){const d=DIMS[i];const[px,py]=pt(i,Rr*d.v*prog);
+      x.beginPath();x.arc(px,py,4,0,6.283);x.fillStyle="#0891b2";x.fill();
+      x.beginPath();x.arc(px,py,9,0,6.283);x.fillStyle="rgba(8,145,178,0.20)";x.fill();}
+  }
+  function animate(){prog+=0.03;if(prog>=1){prog=1;draw();return;}draw();requestAnimationFrame(animate);}
+  draw();
+  const rio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&!started){started=true;reduced?(prog=1,draw()):animate();}}),{threshold:.4});
+  rio.observe(c);
+})();
+
+/* ===================== 2. CREATIVITY DIAL (temperature) ===================== */
+let DIAL_TRIES=0;
+(function(){
+  const slider=document.getElementById("tempSlider");
+  const out=document.getElementById("poemOut");
+  const valEl=document.getElementById("tempVal");
+  const moodEl=document.getElementById("tempMood");
+  const chart=document.getElementById("probChart"), cx=chart.getContext("2d");
+  const CW=chart.width, CH=chart.height;
+
+  // Poems straight from the AirForce deck — one per creativity band.
+  const POEMS={
+    safe:["A teacher shows the way,","Guiding students every day,","With AI they learn and grow,","New ideas begin to flow."],
+    creative:["In a room where questions fly,","A teacher opens doors to AI,","Code becomes a spark of light,","And curious minds take flight."],
+    wild:["Circuits whisper beneath the moon,","While curious minds compose a tune,","Algorithms dance across the screen,","Turning impossible into a dream."]
+  };
+  // "A teacher opens the door to ___" — candidate next words with base scores.
+  const CAND=[
+    {w:"knowledge",l:3.2},{w:"learning",l:2.6},{w:"ideas",l:2.1},{w:"the future",l:1.7},
+    {w:"wonder",l:1.2},{w:"adventure",l:0.7},{w:"dragons",l:0.1},{w:"Tuesday",l:-0.4}
+  ];
+  let cur=CAND.map(()=>1/CAND.length); // eased bar heights
+  let target=cur.slice();
+
+  function bandOf(T){return T<0.4?"safe":T<=1.0?"creative":"wild";}
+  function moodOf(T){return T<0.4?"Predictable":T<=1.0?"Creative":"Exploratory";}
+  function softmax(T){
+    const xs=CAND.map(c=>Math.exp(c.l/Math.max(0.08,T)));
+    const s=xs.reduce((a,b)=>a+b,0);
+    return xs.map(x=>x/s);
+  }
+
+  // typewriter
+  let typeTimer=null;
+  function typePoem(lines){
+    if(typeTimer)clearInterval(typeTimer);
+    const full=lines.join("\n");
+    if(reduced){out.textContent=full;return;}
+    let i=0; out.textContent="";
+    const span=document.createElement("span");
+    typeTimer=setInterval(()=>{
+      i++;
+      out.textContent=full.slice(0,i);
+      const cur=document.createElement("span");cur.className="cursor";cur.textContent=" ";
+      out.appendChild(cur);
+      if(i>=full.length){clearInterval(typeTimer);typeTimer=null;out.textContent=full;}
+    },16);
+  }
+
+  function drawChart(){
+    cx.clearRect(0,0,CW,CH);
+    const rows=CAND.length, padL=92, padR=52, top=6, gap=6;
+    const rh=(CH-top-gap*(rows-1))/rows;
+    const barW=CW-padL-padR;
+    cx.font="600 12px ui-monospace,monospace";cx.textBaseline="middle";
+    const maxP=Math.max(...target,0.01);
+    for(let i=0;i<rows;i++){
+      const y=top+i*(rh+gap), yc=y+rh/2;
+      // label
+      cx.fillStyle="#4a5b76";cx.textAlign="right";
+      cx.fillText(CAND[i].w,padL-10,yc);
+      // track
+      cx.fillStyle="rgba(100,130,180,0.14)";
+      rr(padL,y,barW,rh,rh/2);cx.fill();
+      // bar (relative to max so the tallest fills nicely)
+      const frac=cur[i]/maxP;
+      const w=Math.max(2,barW*frac);
+      const grad=cx.createLinearGradient(padL,0,padL+barW,0);
+      grad.addColorStop(0,"#0891b2");grad.addColorStop(1,"#7c3aed");
+      cx.fillStyle=grad;rr(padL,y,w,rh,rh/2);cx.fill();
+      // percent
+      cx.fillStyle="#0f1b2e";cx.textAlign="left";
+      cx.fillText(Math.round(cur[i]*100)+"%",padL+w+8>CW-40?CW-40:padL+w+8,yc);
+    }
+  }
+  function rr(x,y,w,h,r){r=Math.min(r,h/2,w/2);cx.beginPath();
+    cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);
+    cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
+
+  // ease bars every frame for a smooth "settle"
+  (function anim(){
+    let moved=false;
+    for(let i=0;i<cur.length;i++){const d=target[i]-cur[i];if(Math.abs(d)>0.0005){cur[i]+=d*0.18;moved=true;}else cur[i]=target[i];}
+    if(moved)drawChart();
+    requestAnimationFrame(anim);
+  })();
+
+  let lastBand=null;
+  function update(retype){
+    const T=+slider.value/10;
+    valEl.textContent=T.toFixed(1);
+    moodEl.textContent=moodOf(T);
+    moodEl.style.color = T<0.4? "var(--cyan)" : T<=1.0? "var(--violet)" : "var(--pink)";
+    target=softmax(T);
+    const band=bandOf(T);
+    if(band!==lastBand){
+      lastBand=band;
+      if(retype!==false){typePoem(POEMS[band]);DIAL_TRIES++;
+        const cl=document.getElementById("cLearn");if(cl)cl.textContent=DIAL_TRIES;}
+      else out.textContent=POEMS[band].join("\n");
+    }
+    // preset highlight
+    document.querySelectorAll("#tempPresets button").forEach(b=>
+      b.classList.toggle("active",+b.dataset.t===+slider.value));
+  }
+  slider.addEventListener("input",()=>update(true));
+  document.querySelectorAll("#tempPresets button").forEach(b=>b.onclick=()=>{
+    slider.value=b.dataset.t;update(true);
+  });
+  // init (no typewriter on first paint so the section looks ready)
+  drawChart();update(false);
+})();
+
+/* ===================== BRIEF · open live Notion page ===================== */
+(function(){
+  const NOTION_URL = "https://expensive-enquiry-623.notion.site/AirForce-3b82a2e88a8580eca41ae6896561a15b";
+  const btn=document.getElementById("notionOpen");
+  if(btn) btn.onclick=()=>window.open(NOTION_URL,"_blank","noopener");
+})();
+
+/* ===================== LANGUAGE / SENTIMENT ===================== */
+(function(){
+  const POS={amazing:3,love:3,loved:3,great:2,good:2,happy:3,wonderful:3,brilliant:3,excellent:3,awesome:3,fantastic:3,best:2,beautiful:2,fun:2,exciting:2,incredible:3,perfect:3,enjoy:2,enjoyed:2,like:1,nice:2,cool:2,smart:2,helpful:2,inspiring:3,future:1,learning:1,win:2,success:2,delighted:3,grateful:2,superb:3,glad:2};
+  const NEG={terrible:3,hate:3,hated:3,bad:2,awful:3,boring:2,waste:3,worst:3,horrible:3,sad:2,angry:2,poor:2,disappointing:3,disappointed:3,ugly:2,slow:1,broken:2,fail:2,failure:3,useless:3,confusing:2,difficult:1,annoying:2,fear:2,scary:2,dangerous:2,problem:1,wrong:2,dull:2,painful:2};
+  const NEGATORS=new Set(["not","no","never","dont","don't","cant","can't","isnt","isn't","wasnt","wasn't","nothing"]);
+  const input=document.getElementById("langInput"),fill=document.getElementById("sentFill"),
+        verdict=document.getElementById("sentVerdict"),toks=document.getElementById("tokens");
+  function analyze(){
+    const raw=input.value.trim();const words=raw.toLowerCase().replace(/[^a-z'\s]/g," ").split(/\s+/).filter(Boolean);
+    let score=0;const chips=[];
+    for(let i=0;i<words.length;i++){
+      const w=words[i];let s=0;
+      if(POS[w])s=POS[w];else if(NEG[w])s=-NEG[w];
+      if(s!==0){const prev=words[i-1];if(prev&&NEGATORS.has(prev))s=-s*0.9;
+        score+=s;chips.push({w,s});}
+    }
+    // squash to -1..1
+    const norm=Math.max(-1,Math.min(1,score/6));
+    const pct=(norm+1)/2*100;
+    fill.style.width=pct+"%";
+    let col;
+    if(norm>0.15)col="linear-gradient(90deg,#34d399,#22d3ee)";
+    else if(norm<-0.15)col="linear-gradient(90deg,#fb7185,#f472b6)";
+    else col="linear-gradient(90deg,#64769a,#9fb0cc)";
+    fill.style.background=col;
+    if(norm>0.15){verdict.textContent="😊 POSITIVE  ·  "+Math.round(pct)+"%";verdict.style.color="var(--green)";}
+    else if(norm<-0.15){verdict.textContent="😠 NEGATIVE  ·  "+Math.round(100-pct)+"%";verdict.style.color="var(--red)";}
+    else{verdict.textContent="😐 NEUTRAL";verdict.style.color="var(--muted)";}
+    toks.innerHTML=chips.length?chips.map(c=>{
+      const pos=c.s>0;const mag=Math.min(1,Math.abs(c.s)/3);
+      const border=pos?"52,211,153":"251,113,133";
+      return '<span class="tok" style="border-color:rgba('+border+','+(0.4+mag*0.6)+');color:rgb('+border+');background:rgba('+border+','+(0.05+mag*0.12)+')">'+c.w+' <b style="opacity:.7">'+(pos?"+":"")+c.s.toFixed(0)+'</b></span>';
+    }).join(""):'<span class="hint">No strongly emotional words detected — that itself is a signal (neutral tone).</span>';
+  }
+  document.getElementById("langRun").onclick=analyze;
+  input.addEventListener("input",analyze);
+  document.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>{input.value=b.dataset.ex;analyze();});
+  analyze();
+})();
+
+/* ===================== 5. GENERATIVE FLOW-FIELD ART ===================== */
+let ART_COUNT=0;
+(function(){
+  const c=document.getElementById("genCanvas"),x=c.getContext("2d");
+  const W=c.width,H=c.height;
+  const seedEl=document.getElementById("genSeed");
+  const palettes=[
+    ["#22d3ee","#a855f7","#f472b6"],
+    ["#34d399","#22d3ee","#60a5fa"],
+    ["#fbbf24","#f472b6","#a855f7"],
+    ["#60a5fa","#a855f7","#f472b6"],
+    ["#34d399","#fbbf24","#22d3ee"],
+  ];
+  // seeded PRNG
+  function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  function gen(seed){
+    ART_COUNT++;const cnt=document.getElementById("cArt");if(cnt)cnt.textContent=ART_COUNT;
+    const rnd=mulberry(seed);
+    seedEl.textContent="seed · "+seed.toString(16).slice(0,6);
+    x.fillStyle="#05070f";x.fillRect(0,0,W,H);
+    const pal=palettes[Math.floor(rnd()*palettes.length)];
+    const scale=0.003+rnd()*0.004, swirl=rnd()*6.283, turns=1+rnd()*3;
+    const lines=reduced?260:520;
+    x.globalCompositeOperation="lighter";
+    for(let i=0;i<lines;i++){
+      let px=rnd()*W, py=rnd()*H;
+      const col=pal[Math.floor(rnd()*pal.length)];
+      x.strokeStyle=col; x.globalAlpha=0.08+rnd()*0.14; x.lineWidth=0.6+rnd()*1.6;
+      x.beginPath();x.moveTo(px,py);
+      const steps=40+Math.floor(rnd()*70);
+      for(let s=0;s<steps;s++){
+        const ang=Math.sin(px*scale+swirl)*Math.cos(py*scale)*turns*Math.PI + swirl;
+        px+=Math.cos(ang)*3.4; py+=Math.sin(ang)*3.4;
+        if(px<0||px>W||py<0||py>H)break;
+        x.lineTo(px,py);
+      }
+      x.stroke();
+    }
+    x.globalCompositeOperation="source-over";x.globalAlpha=1;
+    // subtle vignette
+    const g=x.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,W*0.7);
+    g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(5,7,15,0.55)");
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+  }
+  let seedBase=1337;
+  document.getElementById("genRun").onclick=()=>{seedBase=(seedBase*1103515245+12345)&0x7fffffff;gen(seedBase);};
+  gen(seedBase);
+})();
+
+/* ===================== 6. TIMELINE ===================== */
+(function(){
+  const MS=[
+    {yr:1997,v:8,l:"Deep Blue beats world chess champion",c:"#60a5fa"},
+    {yr:2011,v:15,l:"Watson wins Jeopardy!",c:"#60a5fa"},
+    {yr:2012,v:22,l:"Deep learning cracks image recognition",c:"#22d3ee"},
+    {yr:2016,v:35,l:"AlphaGo beats world Go champion",c:"#22d3ee"},
+    {yr:2020,v:55,l:"AI predicts protein folding (AlphaFold)",c:"#34d399"},
+    {yr:2022,v:78,l:"ChatGPT — AI conversation goes mainstream",c:"#a855f7"},
+    {yr:2024,v:92,l:"Multimodal AI: sees, hears, speaks, reasons",c:"#f472b6"},
+    {yr:"Now",v:100,l:"AI agents that act on their own",c:"#fbbf24"},
+  ];
+  const box=document.getElementById("tlBars");
+  box.innerHTML=MS.map(m=>(
+    '<div class="tl"><div class="yr">'+m.yr+'</div>'+
+    '<div class="track"><div class="barf" data-v="'+m.v+'" style="background:linear-gradient(90deg,'+m.c+'aa,'+m.c+')">'+
+    '<span class="barlbl">'+m.l+'</span></div></div></div>'
+  )).join("");
+  const bars=box.querySelectorAll(".barf");
+  let done=false;
+  const tio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&!done){done=true;
+    bars.forEach((b,i)=>setTimeout(()=>{b.style.width=b.dataset.v+"%";}, reduced?0:i*140));}}),{threshold:.3});
+  tio.observe(document.getElementById("tlPanel"));
+})();
+</script>
+</body>
+</html>

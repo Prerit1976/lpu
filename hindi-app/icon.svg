@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#FF9933"/>
+  <rect x="0" y="170" width="512" height="172" fill="#FFFFFF"/>
+  <rect x="0" y="342" width="512" height="170" rx="0" fill="#138808"/>
+  <rect x="0" y="342" width="512" height="170" fill="#138808"/>
+  <!-- Navy blue Ashoka-inspired circle -->
+  <circle cx="256" cy="256" r="60" fill="none" stroke="#000080" stroke-width="10"/>
+  <!-- Hindi text: हिं -->
+  <text x="256" y="285" font-family="serif" font-size="110" font-weight="bold" fill="#000080" text-anchor="middle" dominant-baseline="middle">हि</text>
+</svg>

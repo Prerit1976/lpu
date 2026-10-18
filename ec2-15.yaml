@@ -1,0 +1,60 @@
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to launch a Free Tier Linux EC2 instance in Mumbai Region (ap-south-1)
+
+Parameters:
+  KeyPairName: testday2
+    Type: String
+    Description: Name of an existing EC2 Key Pair for SSH access
+
+    Parameters:
+  HTMLContent:
+    Type: String
+    Description: The HTML content to display on the web page
+    Default: "<h1>Web Server Running</h1>
+
+
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          - IpProtocol: http
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-03f4878755434977f  # Amazon Linux 2 AMI (Free Tier) for ap-south-1
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
+
+          user_data = <<-EOF
+              #!/bin/bash
+              sudo yum install -y httpd
+              sudo systemctl start httpd
+              sudo systemctl enable httpd
+              echo "${HTMLContent}" > /var/www/html/index.html
+              EOF
+      
+
+Outputs:
+  InstanceId:
+    Description: The EC2 Instance ID
+    Value: !Ref EC2Instance
+
+  PublicIP:
+    Description: The Public IP Address of the instance
+    Value: !GetAtt EC2Instance.PublicIp
